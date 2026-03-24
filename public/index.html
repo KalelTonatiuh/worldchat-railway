@@ -321,7 +321,20 @@ select.search-input option { background: #0a160a; }
   letter-spacing: 0.06em; transition: background 0.1s;
 }
 .ctx-item:hover  { background: rgba(200,148,26,0.15); }
-.ctx-item.danger { color: #ff6644; }
+.ctx-item.owner-only { color: #cc88ff; }
+.ctx-item.safe { color: var(--phosphor); }
+
+/* ── Slash command hint ───────────────────────────────────── */
+#cmd-hint {
+  display: none; padding: 3px clamp(8px,2vw,16px);
+  background: rgba(0,15,0,0.7); border-top: 1px solid var(--phosphor-lo);
+  font-family: 'VT323', monospace; font-size: clamp(12px,1.8vw,15px);
+  color: var(--phosphor-dim); letter-spacing: 0.04em;
+  flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#cmd-hint.visible { display: block; }
+#cmd-hint .cmd-name { color: var(--phosphor); }
+#cmd-hint .cmd-sep  { color: var(--phosphor-lo); margin: 0 4px; }
 
 /* ── Controls ─────────────────────────────────────────────────────── */
 #controls {
@@ -750,6 +763,7 @@ select.search-input option { background: #0a160a; }
     </div>
   </div>
 
+  <div id="cmd-hint"></div>
   <div id="controls">
     <div class="control-row">
       <span class="ctrl-label">HANDLE:</span>
@@ -1014,8 +1028,11 @@ select.search-input option { background: #0a160a; }
 <!-- ═══════════════ CONTEXT MENU ═══════════════ -->
 <div id="ctx-menu">
   <div class="ctx-item" id="ctx-vote">🗳 Vote to mute</div>
-  <div class="ctx-item danger" id="ctx-kick" style="display:none">⚡ Kick (mod)</div>
-  <div class="ctx-item danger" id="ctx-ban"  style="display:none">🚫 Ban (owner)</div>
+  <div class="ctx-item safe"       id="ctx-unmute"   style="display:none">🔓 Unmute (mod)</div>
+  <div class="ctx-item danger"     id="ctx-kick"     style="display:none">⚡ Mute 1h (mod)</div>
+  <div class="ctx-item owner-only" id="ctx-promote"  style="display:none">⬆ Promote to mod</div>
+  <div class="ctx-item owner-only" id="ctx-demote"   style="display:none">⬇ Demote mod</div>
+  <div class="ctx-item danger"     id="ctx-ban"      style="display:none">🚫 Ban (owner)</div>
 </div>
 
 <script>
@@ -1107,7 +1124,10 @@ const linkProceedBtn = document.getElementById('link-proceed-btn');
 const mutedOverlay   = document.getElementById('muted-overlay');
 const ctxMenu        = document.getElementById('ctx-menu');
 const ctxVote        = document.getElementById('ctx-vote');
+const ctxUnmute      = document.getElementById('ctx-unmute');
 const ctxKick        = document.getElementById('ctx-kick');
+const ctxPromote     = document.getElementById('ctx-promote');
+const ctxDemote      = document.getElementById('ctx-demote');
 const ctxBan         = document.getElementById('ctx-ban');
 const ledConn        = document.getElementById('led-conn');
 const ledErr         = document.getElementById('led-err');
@@ -1270,7 +1290,7 @@ linkProceedBtn.addEventListener('click', () => {
 });
 
 // ══════════════════════════════════════════════════════════
-//  CONTEXT MENU (vote-kick / mod actions)
+//  CONTEXT MENU (vote-kick / mod / owner actions)
 // ══════════════════════════════════════════════════════════
 document.addEventListener('contextmenu', (e) => {
   const line = e.target.closest('.msg-line[data-handle]');
@@ -1279,10 +1299,24 @@ document.addEventListener('contextmenu', (e) => {
   const target = line.dataset.handle;
   if (!target || target === myHandle) return;
   ctxTargetHandle = target;
-  ctxKick.style.display = (myRole === 'mod' || myRole === 'owner') ? 'block' : 'none';
-  ctxBan.style.display  = (myRole === 'owner') ? 'block' : 'none';
-  ctxMenu.style.left    = Math.min(e.clientX, window.innerWidth  - 160) + 'px';
-  ctxMenu.style.top     = Math.min(e.clientY, window.innerHeight - 120) + 'px';
+
+  const isMod   = myRole === 'mod' || myRole === 'owner';
+  const isOwner = myRole === 'owner';
+
+  // Check if target is protected (owner, or a mod being targeted by another mod)
+  const targetUser    = onlineUsers.find(u => u.handle === target);
+  const targetIsOwner = targetUser && targetUser.role === 'owner';
+  const targetIsMod   = targetUser && (targetUser.role === 'mod' || targetUser.role === 'owner');
+  const canActOnTarget = isOwner || (!targetIsMod);
+
+  ctxUnmute.style.display  = (isMod && canActOnTarget)   ? 'block' : 'none';
+  ctxKick.style.display    = (isMod && canActOnTarget)    ? 'block' : 'none';
+  ctxPromote.style.display = (isOwner && !targetIsOwner)  ? 'block' : 'none';
+  ctxDemote.style.display  = (isOwner && targetIsMod && !targetIsOwner) ? 'block' : 'none';
+  ctxBan.style.display     = (isOwner && !targetIsOwner)  ? 'block' : 'none';
+
+  ctxMenu.style.left    = Math.min(e.clientX, window.innerWidth  - 180) + 'px';
+  ctxMenu.style.top     = Math.min(e.clientY, window.innerHeight - 180) + 'px';
   ctxMenu.style.display = 'block';
 });
 document.addEventListener('click', () => { ctxMenu.style.display = 'none'; });
@@ -1292,9 +1326,23 @@ ctxVote.addEventListener('click', () => {
   ws.send(JSON.stringify({ type:'votekick', target: ctxTargetHandle }));
   appendMessage({ type:'system', text:`You voted to mute ${ctxTargetHandle}.`, ts: Date.now() });
 });
+ctxUnmute.addEventListener('click', () => {
+  if (!ctxTargetHandle || !ws) return;
+  ws.send(JSON.stringify({ type:'unmute', target: ctxTargetHandle }));
+});
 ctxKick.addEventListener('click', () => {
   if (!ctxTargetHandle || !ws) return;
   ws.send(JSON.stringify({ type:'kick', target: ctxTargetHandle }));
+});
+ctxPromote.addEventListener('click', () => {
+  if (!ctxTargetHandle || !ws) return;
+  if (confirm(`Promote ${ctxTargetHandle} to moderator?`))
+    ws.send(JSON.stringify({ type:'promote', target: ctxTargetHandle }));
+});
+ctxDemote.addEventListener('click', () => {
+  if (!ctxTargetHandle || !ws) return;
+  if (confirm(`Demote ${ctxTargetHandle} from moderator?`))
+    ws.send(JSON.stringify({ type:'demote', target: ctxTargetHandle }));
 });
 ctxBan.addEventListener('click', () => {
   if (!ctxTargetHandle || !ws) return;
@@ -1940,13 +1988,114 @@ reverifyBtn.addEventListener('click', submitReverify);
 reverifyInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitReverify(); });
 
 // ══════════════════════════════════════════════════════════
+//  SLASH COMMANDS
+// ══════════════════════════════════════════════════════════
+const COMMANDS = [
+  { cmd:'/help',         args:'',           roles:['guest','user','mod','owner'], desc:'List available commands' },
+  { cmd:'/kick',         args:'<handle>',   roles:['mod','owner'],               desc:'Mute user for 1 hour' },
+  { cmd:'/unmute',       args:'<handle>',   roles:['mod','owner'],               desc:'Remove mute from user' },
+  { cmd:'/ban',          args:'<handle>',   roles:['owner'],                     desc:'Permanently ban user' },
+  { cmd:'/promote',      args:'<handle>',   roles:['owner'],                     desc:'Promote user to mod' },
+  { cmd:'/demote',       args:'<handle>',   roles:['owner'],                     desc:'Demote mod to user' },
+  { cmd:'/clearhistory', args:'',           roles:['owner'],                     desc:'Wipe message history' },
+  { cmd:'/mute',         args:'<handle>',   roles:['mod','owner'],               desc:'Alias for /kick' },
+];
+
+function availableCmds() {
+  return COMMANDS.filter(c => c.roles.includes(myRole));
+}
+
+function parseAndSendCmd(raw) {
+  const parts  = raw.trim().split(/\s+/);
+  const cmd    = parts[0].toLowerCase();
+  const target = parts[1] || '';
+
+  if (cmd === '/help') {
+    const lines = availableCmds().map(c =>
+      `${c.cmd}${c.args ? ' ' + c.args : ''} — ${c.desc}`
+    );
+    lines.forEach(l => appendMessage({ type:'system', text: l, ts: Date.now() }));
+    return true;
+  }
+
+  if (!ws || ws.readyState !== WebSocket.OPEN) return false;
+
+  if (cmd === '/kick' || cmd === '/mute') {
+    if (!target) { appendMessage({ type:'error', text:'Usage: /kick <handle>' }); return true; }
+    ws.send(JSON.stringify({ type:'kick', target }));
+    return true;
+  }
+  if (cmd === '/unmute') {
+    if (!target) { appendMessage({ type:'error', text:'Usage: /unmute <handle>' }); return true; }
+    ws.send(JSON.stringify({ type:'unmute', target }));
+    return true;
+  }
+  if (cmd === '/ban') {
+    if (!target) { appendMessage({ type:'error', text:'Usage: /ban <handle>' }); return true; }
+    if (confirm(`Permanently ban ${target}?`))
+      ws.send(JSON.stringify({ type:'ban', target }));
+    return true;
+  }
+  if (cmd === '/promote') {
+    if (!target) { appendMessage({ type:'error', text:'Usage: /promote <handle>' }); return true; }
+    ws.send(JSON.stringify({ type:'promote', target }));
+    return true;
+  }
+  if (cmd === '/demote') {
+    if (!target) { appendMessage({ type:'error', text:'Usage: /demote <handle>' }); return true; }
+    ws.send(JSON.stringify({ type:'demote', target }));
+    return true;
+  }
+  if (cmd === '/clearhistory') {
+    if (confirm('Wipe entire message history for everyone?'))
+      ws.send(JSON.stringify({ type:'clearhistory' }));
+    return true;
+  }
+
+  // Unknown slash command
+  appendMessage({ type:'error', text:`Unknown command: ${cmd}. Type /help for list.` });
+  return true;
+}
+
+// Command hint bar
+const cmdHint = document.getElementById('cmd-hint');
+
+function updateCmdHint(val) {
+  if (!val.startsWith('/')) { cmdHint.classList.remove('visible'); return; }
+  const typed = val.toLowerCase();
+  const matches = availableCmds().filter(c => c.cmd.startsWith(typed));
+  if (!matches.length) {
+    cmdHint.innerHTML = '<span style="color:var(--red-err)">unknown command</span>';
+    cmdHint.classList.add('visible');
+    return;
+  }
+  cmdHint.innerHTML = matches.map((c, i) => {
+    const name = `<span class="cmd-name">${c.cmd}</span>`;
+    const args = c.args ? ` <span style="color:var(--amber-hi)">${c.args}</span>` : '';
+    const sep  = i < matches.length - 1 ? '<span class="cmd-sep">·</span>' : '';
+    return name + args + sep;
+  }).join(' ');
+  cmdHint.classList.add('visible');
+}
+
+msgInput.addEventListener('input', () => { updateCmdHint(msgInput.value); });
+
+// ══════════════════════════════════════════════════════════
 //  SEND MESSAGE
 // ══════════════════════════════════════════════════════════
 function sendMsg() {
   const text = msgInput.value.trim();
-  if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+  if (!text) return;
+  if (text.startsWith('/')) {
+    msgInput.value = '';
+    cmdHint.classList.remove('visible');
+    parseAndSendCmd(text);
+    return;
+  }
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
   ws.send(JSON.stringify({ type:'msg', text }));
   msgInput.value = '';
+  cmdHint.classList.remove('visible');
 }
 sendBtn.addEventListener('click', sendMsg);
 msgInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMsg(); });

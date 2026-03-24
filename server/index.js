@@ -411,15 +411,33 @@ wss.on('connection', (ws, req) => {
     const isMod   = role === 'mod' || role === 'owner';
     const isOwner = role === 'owner';
 
+    // Returns true if the target handle is protected from the acting role
+    function isProtected(targetLc) {
+      if (targetLc === OWNER_HANDLE.toLowerCase()) return true;   // owner is untouchable
+      if (!isOwner && mods.has(targetLc)) return true;            // mods can't act on other mods
+      return false;
+    }
+
     if (data.type === 'kick') {
       if (!isMod) { send(ws, { type:'error', text:'No permission.' }); return; }
       const t = String(data.target || '').toLowerCase();
+      if (isProtected(t)) { send(ws, { type:'error', text:'You cannot mute that user.' }); return; }
       muteList.set(t, now + MUTE_DURATION_MS);
       wss.clients.forEach(c => {
         if (c._verified && c._handle.toLowerCase() === t)
           send(c, { type:'muted', text:'You have been muted by a moderator for 1 hour.' });
       });
       systemMsg(`${t} was muted by ${ws._handle}.`);
+      return;
+    }
+
+    if (data.type === 'unmute') {
+      if (!isMod) { send(ws, { type:'error', text:'No permission.' }); return; }
+      const t = String(data.target || '').toLowerCase();
+      if (isProtected(t)) { send(ws, { type:'error', text:'You cannot unmute that user.' }); return; }
+      muteList.delete(t);
+      systemMsg(`${t} was unmuted by ${ws._handle}.`);
+      send(ws, { type:'system', text:`✓ ${t} unmuted.`, ts: now });
       return;
     }
 
