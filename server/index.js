@@ -227,6 +227,7 @@ wss.on('connection', (ws, req) => {
     _pendingHandle: null, _pendingFlag: null,
     _msgTimes: [], _lastMsgAt: 0, _lastRenameAt: 0,
     _reverifyTimer: null, _reverifyGrace: null, _awaitingReverify: false,
+    _profile: { pronouns: '', bio: '' },
   });
 
   send(ws, { type: 'online', count: wss.clients.size });
@@ -443,6 +444,31 @@ wss.on('connection', (ws, req) => {
       const t = String(data.target || '').toLowerCase();
       mods.delete(t);
       systemMsg(`${t} was demoted by ${ws._handle}.`);
+      return;
+    }
+
+    // ── typing ────────────────────────────────────────────────────────────
+    if (data.type === 'typing') {
+      // Broadcast to all other verified clients — no rate limiting needed,
+      // client already debounces to once per 2s.
+      broadcast({ type: 'typing', handle: ws._handle, flag: ws._flag }, ws);
+      return;
+    }
+
+    // ── profile_update ────────────────────────────────────────────────────
+    if (data.type === 'profile_update') {
+      const pronouns = sanitize(String(data.pronouns || ''), 30);
+      const bio      = sanitize(String(data.bio      || ''), 160);
+      // Store on the socket so latecomers can request it via profile_data
+      ws._profile = { pronouns, bio };
+      // Strip avatar before rebroadcast — clients cache avatars locally only
+      broadcast({
+        type:     'profile_update',
+        handle:   ws._handle,
+        flag:     ws._flag,
+        pronouns,
+        bio,
+      }, ws);
       return;
     }
 

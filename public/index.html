@@ -174,6 +174,35 @@ select.search-input option { background: #0a160a; }
 .handle { color: var(--phosphor); font-weight: bold; }
 .msg-line.own .handle { color: var(--amber-hi); }
 
+/* ── Reaction tray ────────────────────────────────────────── */
+.msg-line { position: relative; padding-right: 2px; }
+.reaction-tray {
+  display: none; position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  gap: 2px; background: rgba(3,13,3,0.92);
+  border: 1px solid var(--phosphor-lo); padding: 2px 4px; z-index: 5;
+  align-items: center;
+}
+.msg-line:hover .reaction-tray { display: flex; }
+.react-btn {
+  background: transparent; border: 1px solid transparent;
+  font-size: 13px; cursor: pointer; padding: 1px 3px; line-height: 1;
+  border-radius: 2px; transition: border-color 0.1s, background 0.1s;
+  font-family: monospace;
+}
+.react-btn:hover { border-color: var(--phosphor-dim); background: rgba(78,255,145,0.1); }
+.react-btn.reacted { border-color: var(--phosphor); background: rgba(78,255,145,0.15); }
+.reaction-counts {
+  display: flex; gap: 3px; flex-wrap: wrap; align-items: center; margin-top: 2px;
+}
+.reaction-pip {
+  font-family: 'VT323', monospace; font-size: 12px; color: var(--phosphor-dim);
+  border: 1px solid var(--phosphor-lo); padding: 0px 4px; cursor: pointer;
+  background: rgba(78,255,145,0.04); transition: background 0.1s;
+  line-height: 1.4;
+}
+.reaction-pip:hover { background: rgba(78,255,145,0.12); }
+.reaction-pip.own-react { border-color: var(--phosphor); color: var(--phosphor); }
+
 /* ── Context menu ─────────────────────────────────────────────────── */
 #ctx-menu {
   position: fixed; z-index: 200; display: none;
@@ -643,6 +672,7 @@ select.search-input option { background: #0a160a; }
     <div class="status-item">ONLINE: <span id="online-count">—</span></div>
     <div class="status-item">MSGS: <span id="msg-count">0</span></div>
     <div class="status-item" id="role-badge" style="display:none">ROLE: <span id="role-text">—</span></div>
+    <button id="sound-toggle-btn" class="status-item" title="Toggle sounds" style="cursor:pointer;border-color:var(--phosphor-lo);background:transparent;font-family:'VT323',monospace;font-size:clamp(12px,2vw,16px);color:var(--phosphor-dim);letter-spacing:0.06em">🔇 SFX</button>
     <div class="status-item" id="typing-status" style="display:none">
       <span id="typing-led" class="led off" style="width:8px;height:8px;display:inline-block;vertical-align:middle;margin-right:5px"></span>
       <span id="typing-label" style="color:var(--phosphor-dim);font-size:clamp(11px,1.8vw,14px)"></span>
@@ -1290,6 +1320,26 @@ function appendMessage(data) {
     line.appendChild(document.createTextNode(' '));
     line.appendChild(textSpan);
 
+    // ── Reaction tray ──────────────────────────────────────
+    const msgId = data.id || (data.handle + data.ts);
+    line.dataset.msgId = msgId;
+
+    const tray = document.createElement('div');
+    tray.className = 'reaction-tray';
+    REACTION_EMOJIS.forEach(emoji => {
+      const btn = document.createElement('button');
+      btn.className   = 'react-btn';
+      btn.textContent = emoji;
+      btn.title       = `React with ${emoji}`;
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        toggleReaction(msgId, emoji, line);
+      });
+      tray.appendChild(btn);
+    });
+    line.appendChild(tray);
+    // ──────────────────────────────────────────────────────
+
     allMessages.push({ el: line, ts: data.ts, flag: data.flag, text: data.text, handle: data.handle });
     msgCount++;
     msgCountEl.textContent = msgCount;
@@ -1301,10 +1351,18 @@ function appendMessage(data) {
       profileCache[data.handle].msgCount = (profileCache[data.handle].msgCount || 0) + 1;
       if (!profileCache[data.handle].joined) profileCache[data.handle].joined = data.ts;
     }
+
+    // Sound
+    if (data.own) SFX.send(); else SFX.tick();
+
   } else if (data.type === 'system') {
     line.classList.add('system');
     line.textContent = `— ${data.text} —`;
     if (data.ts) allMessages.push({ el: line, ts: data.ts, flag:'', text: data.text, handle:'' });
+    // Play join/leave sounds for system messages
+    const t = data.text || '';
+    if (t.includes('joined the channel')) SFX.join();
+    else if (t.includes('left the channel')) SFX.leave();
   } else if (data.type === 'error') {
     line.classList.add('error-msg');
     line.textContent = `⚠ ${data.text}`;
@@ -1316,6 +1374,157 @@ function appendMessage(data) {
   if (isScrolledToBottom()) feed.scrollTop = feed.scrollHeight;
   ledTx();
   if (searchOpen) runSearch();
+}
+
+// ══════════════════════════════════════════════════════════
+//  SOUND ENGINE
+// ══════════════════════════════════════════════════════════
+let soundEnabled = false;
+let audioCtx     = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playTone(freq, type, duration, gain, attackTime, decayTime) {
+  if (!soundEnabled) return;
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const env = ctx.createGain();
+    osc.connect(env);
+    env.connect(ctx.destination);
+    osc.type      = type || 'square';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    env.gain.setValueAtTime(0, ctx.currentTime);
+    env.gain.linearRampToValueAtTime(gain || 0.12, ctx.currentTime + (attackTime || 0.005));
+    env.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + (decayTime || duration));
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration + 0.02);
+  } catch(_) {}
+}
+
+function playNoise(duration, gain) {
+  if (!soundEnabled) return;
+  try {
+    const ctx        = getAudioCtx();
+    const bufferSize = ctx.sampleRate * duration;
+    const buffer     = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data       = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1);
+    const src  = ctx.createBufferSource();
+    const filt = ctx.createBiquadFilter();
+    const env  = ctx.createGain();
+    src.buffer = buffer;
+    filt.type  = 'bandpass';
+    filt.frequency.value = 1200;
+    filt.Q.value         = 0.5;
+    src.connect(filt);
+    filt.connect(env);
+    env.connect(ctx.destination);
+    env.gain.setValueAtTime(gain || 0.06, ctx.currentTime);
+    env.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    src.start();
+    src.stop(ctx.currentTime + duration + 0.01);
+  } catch(_) {}
+}
+
+// Specific sound events
+const SFX = {
+  // Typewriter tick — incoming message
+  tick() {
+    playNoise(0.025, 0.07);
+    playTone(3200, 'square', 0.018, 0.04, 0.001, 0.018);
+  },
+  // CRT click + blip — own message sent
+  send() {
+    playTone(880,  'square',   0.04,  0.12, 0.002, 0.04);
+    playTone(1320, 'square',   0.025, 0.08, 0.002, 0.025);
+    playNoise(0.03, 0.05);
+  },
+  // Soft chime — join
+  join() {
+    playTone(523, 'sine', 0.18, 0.09, 0.01, 0.18);
+    setTimeout(() => playTone(659, 'sine', 0.14, 0.07, 0.01, 0.14), 90);
+    setTimeout(() => playTone(784, 'sine', 0.22, 0.05, 0.01, 0.22), 180);
+  },
+  // Descending tone — leave
+  leave() {
+    playTone(523, 'sine', 0.14, 0.06, 0.01, 0.14);
+    setTimeout(() => playTone(392, 'sine', 0.18, 0.04, 0.01, 0.18), 80);
+  },
+  // Short blip — reaction
+  react() {
+    playTone(1047, 'sine', 0.06, 0.07, 0.003, 0.06);
+  },
+};
+
+// Sound toggle button
+const soundToggleBtn = document.getElementById('sound-toggle-btn');
+soundToggleBtn.addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+  soundToggleBtn.textContent  = soundEnabled ? '🔊 SFX' : '🔇 SFX';
+  soundToggleBtn.style.color  = soundEnabled ? 'var(--phosphor)' : 'var(--phosphor-dim)';
+  soundToggleBtn.style.borderColor = soundEnabled ? 'var(--phosphor-dim)' : 'var(--phosphor-lo)';
+  // Resume AudioContext if suspended (browser autoplay policy)
+  if (soundEnabled && audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  if (soundEnabled) SFX.tick(); // confirm click
+});
+
+// ══════════════════════════════════════════════════════════
+//  REACTION STATE
+// ══════════════════════════════════════════════════════════
+// msgId → { emoji → count }   (in-memory, local only)
+const reactionData  = {};
+// msgId → Set<emoji> the local user has reacted with
+const myReactions   = {};
+
+const REACTION_EMOJIS = ['♥', '☢', '✓', '☠', '⚡', '★', '?'];
+
+function getReactions(msgId) {
+  if (!reactionData[msgId]) reactionData[msgId] = {};
+  return reactionData[msgId];
+}
+
+function toggleReaction(msgId, emoji, lineEl) {
+  const r  = getReactions(msgId);
+  if (!myReactions[msgId]) myReactions[msgId] = new Set();
+  const alreadyReacted = myReactions[msgId].has(emoji);
+  if (alreadyReacted) {
+    myReactions[msgId].delete(emoji);
+    r[emoji] = Math.max(0, (r[emoji] || 0) - 1);
+    if (r[emoji] === 0) delete r[emoji];
+  } else {
+    myReactions[msgId].add(emoji);
+    r[emoji] = (r[emoji] || 0) + 1;
+  }
+  SFX.react();
+  renderReactionPips(msgId, lineEl);
+}
+
+function renderReactionPips(msgId, lineEl) {
+  let pipsEl = lineEl.querySelector('.reaction-counts');
+  if (!pipsEl) {
+    pipsEl = document.createElement('div');
+    pipsEl.className = 'reaction-counts';
+    lineEl.appendChild(pipsEl);
+  }
+  pipsEl.innerHTML = '';
+  const r   = getReactions(msgId);
+  const mine = myReactions[msgId] || new Set();
+  Object.entries(r).forEach(([emoji, count]) => {
+    if (count <= 0) return;
+    const pip = document.createElement('span');
+    pip.className   = 'reaction-pip' + (mine.has(emoji) ? ' own-react' : '');
+    pip.textContent = `${emoji}${count}`;
+    pip.title       = `${count} reaction${count > 1 ? 's' : ''}`;
+    pip.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleReaction(msgId, emoji, lineEl);
+    });
+    pipsEl.appendChild(pip);
+  });
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1665,6 +1874,7 @@ expandSendBtn.addEventListener('click', () => {
   const text = expandTextarea.value.trim();
   if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
   ws.send(JSON.stringify({ type:'msg', text }));
+  SFX.send();
   expandTextarea.value = '';
   msgInput.value = '';
   expandOverlay.classList.remove('open');
