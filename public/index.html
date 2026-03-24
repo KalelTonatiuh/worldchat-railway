@@ -6,499 +6,395 @@
 <title>WorldChat MK-II</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <style>
-  /* ── Reset & base ─────────────────────────────────────────────────── */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Reset & base ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
-    --wood-dark:   #2a1a08;
-    --wood-mid:    #4a2c12;
-    --wood-light:  #7a5230;
-    --wood-edge:   #9a6840;
-    --brass:       #c8941a;
-    --brass-dark:  #8a6010;
-    --brass-shine: #f0c040;
-    --screen-bg:   #030d03;
-    --phosphor:    #4eff91;
-    --phosphor-dim:#1a8040;
-    --phosphor-lo: #0d4020;
-    --amber:       #ffdd44;
-    --amber-hi:    #ffe878;
-    --red-err:     #ff5533;
-    --led-green:   #00ff44;
-    --led-amber:   #ffaa00;
-    --led-red:     #ff2200;
-  }
+:root {
+  --wood-dark:   #2a1a08;
+  --wood-mid:    #4a2c12;
+  --wood-light:  #7a5230;
+  --wood-edge:   #9a6840;
+  --brass:       #c8941a;
+  --brass-dark:  #8a6010;
+  --brass-shine: #f0c040;
+  --screen-bg:   #030d03;
+  --phosphor:    #4eff91;
+  --phosphor-dim:#1a8040;
+  --phosphor-lo: #0d4020;
+  --amber:       #ffdd44;
+  --amber-hi:    #ffe878;
+  --red-err:     #ff5533;
+  --led-green:   #00ff44;
+  --led-amber:   #ffaa00;
+  --led-red:     #ff2200;
+}
 
-  html, body {
-    width: 100%; height: 100%;
-    background: #0a0604;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Special Elite', serif;
-    overflow: hidden;
-  }
+html, body {
+  width: 100%; height: 100%;
+  background: #0a0604;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Special Elite', serif;
+  overflow: hidden;
+}
 
-  /* ── Outer cabinet wrapper — fills viewport ───────────────────────── */
-  #cabinet {
-    width: 100vw; height: 100vh;
-    background:
-      radial-gradient(ellipse at 30% 20%, #5a3418 0%, transparent 60%),
-      radial-gradient(ellipse at 70% 80%, #3a1e08 0%, transparent 60%),
-      linear-gradient(160deg, #6b4226 0%, #4a2c12 40%, #3a2010 70%, #2a1608 100%);
-    border: none;
-    display: flex; flex-direction: column;
-    padding: clamp(8px, 2vw, 24px);
-    position: relative;
-    overflow: hidden;
-  }
+/* ── Cabinet ──────────────────────────────────────────────────────── */
+#cabinet {
+  width: 100vw; height: 100vh;
+  background:
+    radial-gradient(ellipse at 30% 20%, #5a3418 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, #3a1e08 0%, transparent 60%),
+    linear-gradient(160deg, #6b4226 0%, #4a2c12 40%, #3a2010 70%, #2a1608 100%);
+  display: flex; flex-direction: column;
+  padding: clamp(8px, 2vw, 24px);
+  position: relative; overflow: hidden;
+}
+#cabinet::before {
+  content: ''; position: absolute; inset: 0;
+  background-image:
+    repeating-linear-gradient(92deg, transparent 0px, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px),
+    repeating-linear-gradient(178deg, transparent 0px, transparent 8px, rgba(255,255,255,0.015) 8px, rgba(255,255,255,0.015) 9px);
+  pointer-events: none; z-index: 0;
+}
+#cabinet::after {
+  content: ''; position: absolute; inset: 6px;
+  border: 2px solid var(--brass-dark); border-radius: 10px;
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.4);
+  pointer-events: none; z-index: 0;
+}
+#cabinet > * { position: relative; z-index: 1; }
 
-  /* Wood grain texture overlay */
-  #cabinet::before {
-    content: '';
-    position: absolute; inset: 0;
-    background-image:
-      repeating-linear-gradient(
-        92deg,
-        transparent 0px, transparent 3px,
-        rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px
-      ),
-      repeating-linear-gradient(
-        178deg,
-        transparent 0px, transparent 8px,
-        rgba(255,255,255,0.015) 8px, rgba(255,255,255,0.015) 9px
-      );
-    pointer-events: none;
-    z-index: 0;
-  }
+/* ── Header ───────────────────────────────────────────────────────── */
+#header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px clamp(8px,2vw,20px) 8px; flex-shrink: 0;
+}
+#brand {
+  font-family: 'Special Elite', serif;
+  font-size: clamp(14px, 3vw, 22px); color: var(--brass-shine);
+  letter-spacing: 0.18em;
+  text-shadow: 0 0 12px rgba(200,148,26,0.6), 0 1px 0 #000;
+  white-space: nowrap;
+}
+.led-row { display: flex; gap: clamp(4px,1vw,10px); align-items: center; }
+.led {
+  width: clamp(8px,1.5vw,14px); height: clamp(8px,1.5vw,14px);
+  border-radius: 50%; border: 1px solid rgba(0,0,0,0.5);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+.led.green { background: var(--led-green); box-shadow: 0 0 8px var(--led-green); }
+.led.amber { background: var(--led-amber); box-shadow: 0 0 8px var(--led-amber); animation: blink 1.4s ease-in-out infinite; }
+.led.red   { background: var(--led-red);   box-shadow: 0 0 8px var(--led-red); }
+.led.off   { background: #1a1a1a; box-shadow: none; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
-  /* Cabinet inner border — brass inlay */
-  #cabinet::after {
-    content: '';
-    position: absolute; inset: 6px;
-    border: 2px solid var(--brass-dark);
-    border-radius: 10px;
-    box-shadow: inset 0 0 30px rgba(0,0,0,0.4);
-    pointer-events: none;
-    z-index: 0;
-  }
+/* ── Screen housing ───────────────────────────────────────────────── */
+#screen-housing {
+  flex: 1; background: #0a0a0a;
+  border-radius: 8px; border: 3px solid var(--brass-dark);
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 0 0 1px rgba(200,148,26,0.2), 0 4px 20px rgba(0,0,0,0.8);
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; min-height: 0;
+}
+#screen-housing::before {
+  content: ''; position: absolute; inset: 0; z-index: 10;
+  background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 3px);
+  pointer-events: none;
+}
+#screen-housing::after {
+  content: ''; position: absolute; inset: 0; z-index: 11;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.7) 100%);
+  pointer-events: none;
+}
+#screen {
+  flex: 1; min-height: 0; background: var(--screen-bg);
+  display: flex; flex-direction: column; position: relative;
+}
 
-  #cabinet > * { position: relative; z-index: 1; }
+/* ── Screen header ────────────────────────────────────────────────── */
+#screen-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: clamp(4px,1vw,10px) clamp(8px,2vw,16px);
+  border-bottom: 1px solid var(--phosphor-lo); flex-shrink: 0;
+}
+#channel-label {
+  font-family: 'VT323', monospace; font-size: clamp(14px,2.5vw,20px);
+  color: var(--phosphor); letter-spacing: 0.12em; text-shadow: 0 0 8px var(--phosphor);
+}
+#status-live {
+  font-family: 'VT323', monospace; font-size: clamp(12px,2vw,16px);
+  color: var(--led-green); text-shadow: 0 0 6px var(--led-green);
+  animation: blink 1s ease-in-out infinite;
+}
 
-  /* ── Header bar ───────────────────────────────────────────────────── */
-  #header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 4px clamp(8px,2vw,20px) 8px;
-    flex-shrink: 0;
-  }
+/* ── Search bar ───────────────────────────────────────────────────── */
+#search-bar {
+  display: none; flex-direction: column; gap: 4px;
+  padding: 6px clamp(8px,2vw,16px); border-bottom: 1px solid var(--phosphor-lo);
+  background: rgba(0,30,0,0.5); flex-shrink: 0;
+}
+#search-bar.open { display: flex; }
+.search-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.search-label { font-family: 'VT323', monospace; font-size: clamp(12px,2vw,15px); color: var(--phosphor-dim); white-space: nowrap; }
+.search-input {
+  background: rgba(0,20,0,0.8); border: 1px solid var(--phosphor-lo);
+  color: var(--phosphor); font-family: 'VT323', monospace; font-size: clamp(13px,2vw,16px);
+  padding: 2px 6px; outline: none; flex: 1; min-width: 80px;
+}
+.search-input:focus { border-color: var(--phosphor-dim); }
+.search-input::placeholder { color: var(--phosphor-lo); }
+select.search-input option { background: #0a160a; }
+#search-results-count {
+  font-family: 'VT323', monospace; font-size: clamp(11px,1.8vw,14px);
+  color: var(--phosphor-dim); padding: 0 clamp(8px,2vw,16px);
+}
 
-  #brand {
-    font-family: 'Special Elite', serif;
-    font-size: clamp(14px, 3vw, 22px);
-    color: var(--brass-shine);
-    letter-spacing: 0.18em;
-    text-shadow: 0 0 12px rgba(200,148,26,0.6), 0 1px 0 #000;
-    white-space: nowrap;
-  }
+/* ── Feed ─────────────────────────────────────────────────────────── */
+#feed {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: clamp(6px,1.5vw,14px) clamp(8px,2vw,16px); scroll-behavior: smooth;
+}
+#feed::-webkit-scrollbar { width: 6px; }
+#feed::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+#feed::-webkit-scrollbar-thumb { background: var(--phosphor-lo); border-radius: 3px; }
 
-  .led-row { display: flex; gap: clamp(4px, 1vw, 10px); align-items: center; }
-  .led {
-    width: clamp(8px,1.5vw,14px); height: clamp(8px,1.5vw,14px);
-    border-radius: 50%;
-    border: 1px solid rgba(0,0,0,0.5);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.5);
-  }
-  .led.green  { background: var(--led-green);  box-shadow: 0 0 8px var(--led-green); }
-  .led.amber  { background: var(--led-amber);  box-shadow: 0 0 8px var(--led-amber); animation: blink 1.4s ease-in-out infinite; }
-  .led.red    { background: var(--led-red);    box-shadow: 0 0 8px var(--led-red); }
-  .led.off    { background: #1a1a1a; box-shadow: none; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.msg-line {
+  font-family: 'VT323', monospace; font-size: clamp(15px,2.5vw,20px);
+  line-height: 1.4; color: var(--phosphor);
+  text-shadow: 0 0 6px rgba(78,255,145,0.4);
+  margin-bottom: 2px; word-break: break-word; transition: opacity 0.2s;
+}
+.msg-line.own      { color: var(--amber); text-shadow: 0 0 6px rgba(255,221,68,0.4); }
+.msg-line.system   { color: var(--phosphor-dim); font-style: italic; }
+.msg-line.error-msg{ color: var(--red-err); }
+.msg-line.hidden   { display: none; }
+.msg-line.highlight{ background: rgba(78,255,145,0.08); border-left: 2px solid var(--phosphor); padding-left: 4px; }
+.ts     { color: var(--phosphor-lo); }
+.handle { color: var(--phosphor); font-weight: bold; }
+.msg-line.own .handle { color: var(--amber-hi); }
 
-  /* ── Screen area — grows to fill remaining space ──────────────────── */
-  #screen-housing {
-    flex: 1;
-    background: #0a0a0a;
-    border-radius: 8px;
-    border: 3px solid var(--brass-dark);
-    box-shadow:
-      inset 0 0 40px rgba(0,0,0,0.9),
-      0 0 0 1px rgba(200,148,26,0.2),
-      0 4px 20px rgba(0,0,0,0.8);
-    position: relative;
-    overflow: hidden;
-    display: flex; flex-direction: column;
-    min-height: 0;
-  }
+/* ── Context menu ─────────────────────────────────────────────────── */
+#ctx-menu {
+  position: fixed; z-index: 200; display: none;
+  background: linear-gradient(160deg, #5a3418 0%, #2a1208 100%);
+  border: 1px solid var(--brass); min-width: 140px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+}
+.ctx-item {
+  font-family: 'Special Elite', serif; font-size: 11px;
+  color: var(--brass-shine); padding: 7px 14px; cursor: pointer;
+  letter-spacing: 0.06em; transition: background 0.1s;
+}
+.ctx-item:hover  { background: rgba(200,148,26,0.15); }
+.ctx-item.danger { color: #ff6644; }
 
-  /* CRT scanlines */
-  #screen-housing::before {
-    content: '';
-    position: absolute; inset: 0; z-index: 10;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent 0px, transparent 2px,
-      rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 3px
-    );
-    pointer-events: none;
-  }
+/* ── Controls ─────────────────────────────────────────────────────── */
+#controls {
+  border-top: 1px solid var(--brass-dark);
+  padding: clamp(6px,1.5vw,12px) clamp(8px,2vw,16px);
+  display: flex; flex-direction: column; gap: clamp(4px,1vw,8px);
+  flex-shrink: 0; background: rgba(0,0,0,0.3);
+}
+.control-row { display: flex; gap: clamp(4px,1vw,8px); align-items: center; flex-wrap: wrap; }
+.ctrl-label {
+  font-family: 'Special Elite', serif; font-size: clamp(10px,1.8vw,13px);
+  color: var(--brass); letter-spacing: 0.08em; white-space: nowrap;
+}
+.ctrl-input {
+  background: rgba(10,5,0,0.8); border: 1px solid var(--brass-dark);
+  border-bottom: 2px solid var(--brass); color: var(--amber);
+  font-family: 'Courier Prime', monospace; font-size: clamp(13px,2vw,16px);
+  padding: clamp(3px,0.8vw,6px) clamp(6px,1.2vw,10px); outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.ctrl-input:focus { border-color: var(--brass-shine); box-shadow: 0 0 8px rgba(200,148,26,0.3); }
+#handle-input { flex: 1; min-width: 80px; max-width: 200px; }
+#flag-display {
+  font-size: clamp(16px,3vw,22px); cursor: pointer; padding: 2px 6px;
+  border: 1px solid var(--brass-dark); background: rgba(10,5,0,0.6);
+  border-radius: 2px; transition: border-color 0.15s;
+}
+#flag-display:hover { border-color: var(--brass); }
+#change-btn, #search-toggle-btn, #account-btn {
+  font-family: 'Special Elite', serif; font-size: clamp(10px,1.8vw,13px);
+  background: linear-gradient(160deg, var(--brass) 0%, var(--brass-dark) 100%);
+  color: #1a0e00; border: 1px solid var(--brass-shine);
+  padding: clamp(4px,0.8vw,7px) clamp(8px,1.5vw,14px); cursor: pointer;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  transition: filter 0.15s, transform 0.1s; white-space: nowrap;
+}
+#change-btn:hover, #search-toggle-btn:hover, #account-btn:hover { filter: brightness(1.2); }
+#change-btn:active, #search-toggle-btn:active, #account-btn:active { transform: scale(0.97); }
+#search-toggle-btn { background: linear-gradient(160deg, #2a4a2a 0%, #1a2e1a 100%); color: var(--phosphor); border-color: var(--phosphor-lo); }
+#search-toggle-btn.active { background: linear-gradient(160deg, #1a4a1a 0%, #0a2e0a 100%); border-color: var(--phosphor); }
+#account-btn { background: linear-gradient(160deg, #2a2a4a 0%, #1a1a2e 100%); color: #aaaaff; border-color: #4444aa; }
+#account-btn.loggedin { background: linear-gradient(160deg, #1a3a1a 0%, #0a2e0a 100%); color: var(--phosphor); border-color: var(--phosphor-dim); }
+#msg-input {
+  flex: 1; background: rgba(0,8,0,0.9); border: 1px solid var(--phosphor-lo);
+  border-bottom: 2px solid var(--phosphor-dim); color: var(--phosphor);
+  font-family: 'VT323', monospace; font-size: clamp(16px,2.8vw,22px);
+  padding: clamp(4px,1vw,8px) clamp(8px,1.5vw,12px); outline: none;
+  transition: border-color 0.2s;
+}
+#msg-input:focus { border-color: var(--phosphor); box-shadow: 0 0 8px rgba(78,255,145,0.2); }
+#msg-input::placeholder { color: var(--phosphor-lo); }
+#send-btn {
+  font-family: 'Special Elite', serif; font-size: clamp(11px,2vw,14px);
+  background: linear-gradient(160deg, var(--brass) 0%, var(--brass-dark) 100%);
+  color: #1a0e00; border: 1px solid var(--brass-shine);
+  padding: clamp(4px,1vw,8px) clamp(12px,2vw,20px); cursor: pointer;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  transition: filter 0.15s, transform 0.1s; white-space: nowrap;
+}
+#send-btn:hover  { filter: brightness(1.2); }
+#send-btn:active { transform: scale(0.97); }
 
-  /* CRT vignette */
-  #screen-housing::after {
-    content: '';
-    position: absolute; inset: 0; z-index: 11;
-    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.7) 100%);
-    pointer-events: none;
-  }
+/* ── Status bar ───────────────────────────────────────────────────── */
+#statusbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: clamp(4px,0.8vw,8px) clamp(8px,2vw,16px);
+  border-top: 1px solid var(--wood-mid); flex-shrink: 0; gap: 8px; flex-wrap: wrap;
+}
+.status-item {
+  font-family: 'VT323', monospace; font-size: clamp(12px,2vw,16px);
+  color: var(--phosphor-dim); border: 1px solid var(--phosphor-lo);
+  padding: 1px clamp(6px,1.2vw,10px); white-space: nowrap;
+}
+.status-item span { color: var(--phosphor); }
+.status-leds { display: flex; gap: clamp(4px,1vw,8px); }
 
-  /* Screen inner */
-  #screen {
-    flex: 1; min-height: 0;
-    background: var(--screen-bg);
-    display: flex; flex-direction: column;
-    position: relative;
-  }
+/* ── Overlays (shared) ────────────────────────────────────────────── */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+  z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.overlay.hidden { display: none; }
+.panel {
+  background: linear-gradient(160deg, #5a3418 0%, #3a1e08 60%, #2a1208 100%);
+  border: 2px solid var(--brass);
+  box-shadow: 0 0 40px rgba(200,148,26,0.3), inset 0 0 20px rgba(0,0,0,0.5);
+  padding: clamp(16px,4vw,32px); max-width: 480px; width: 100%;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.panel-title {
+  font-family: 'Special Elite', serif; font-size: clamp(16px,3vw,22px);
+  color: var(--brass-shine); letter-spacing: 0.15em; text-align: center;
+  text-shadow: 0 0 12px rgba(200,148,26,0.5);
+  border-bottom: 1px solid var(--brass-dark); padding-bottom: 12px;
+}
+.panel-field { display: flex; flex-direction: column; gap: 6px; }
+.panel-label { font-family: 'Special Elite', serif; font-size: clamp(11px,1.8vw,14px); color: var(--brass); letter-spacing: 0.08em; }
+.panel-input {
+  background: rgba(0,0,0,0.6); border: 1px solid var(--brass-dark);
+  border-bottom: 2px solid var(--brass); color: var(--amber);
+  font-family: 'Courier Prime', monospace; font-size: clamp(14px,2.2vw,18px);
+  padding: 8px 12px; outline: none; width: 100%;
+}
+.panel-input:focus { border-color: var(--brass-shine); }
+.flag-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+  gap: 4px; max-height: 180px; overflow-y: auto;
+  border: 1px solid var(--brass-dark); padding: 6px; background: rgba(0,0,0,0.4);
+}
+.flag-grid::-webkit-scrollbar { width: 4px; }
+.flag-grid::-webkit-scrollbar-thumb { background: var(--brass-dark); }
+.flag-btn {
+  font-size: 20px; cursor: pointer; padding: 2px;
+  background: transparent; border: 1px solid transparent;
+  border-radius: 2px; text-align: center;
+  transition: border-color 0.1s, background 0.1s;
+}
+.flag-btn:hover    { border-color: var(--brass); background: rgba(200,148,26,0.1); }
+.flag-btn.selected { border-color: var(--brass-shine); background: rgba(200,148,26,0.2); }
+.panel-btn {
+  font-family: 'Special Elite', serif; font-size: clamp(13px,2vw,16px);
+  background: linear-gradient(160deg, var(--brass) 0%, var(--brass-dark) 100%);
+  color: #1a0e00; border: 1px solid var(--brass-shine); padding: 10px 20px; cursor: pointer;
+  letter-spacing: 0.1em; text-transform: uppercase; width: 100%; transition: filter 0.15s;
+}
+.panel-btn:hover    { filter: brightness(1.15); }
+.panel-btn.secondary {
+  background: transparent; color: var(--brass-dark); border-color: var(--brass-dark);
+  font-size: clamp(11px,1.6vw,13px); padding: 6px;
+}
+.panel-btn.secondary:hover { color: var(--brass); border-color: var(--brass); background: transparent; }
+.disclaimer {
+  font-family: 'Courier Prime', monospace; font-size: clamp(9px,1.5vw,11px);
+  color: #888; text-align: center; line-height: 1.5;
+  border-top: 1px solid var(--brass-dark); padding-top: 10px;
+}
+.disclaimer strong { color: var(--red-err); }
+.panel-err {
+  font-family: 'VT323', monospace; font-size: 16px;
+  color: var(--red-err); text-align: center; min-height: 20px;
+}
 
-  /* ── Screen header ────────────────────────────────────────────────── */
-  #screen-header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: clamp(4px,1vw,10px) clamp(8px,2vw,16px);
-    border-bottom: 1px solid var(--phosphor-lo);
-    flex-shrink: 0;
-  }
+/* ── Bot check overlay ────────────────────────────────────────────── */
+#botcheck-overlay .panel { max-width: 340px; }
+#botcheck-canvas {
+  display: block; margin: 0 auto;
+  border: 1px solid var(--phosphor-lo); border-radius: 2px;
+}
+#botcheck-hint {
+  font-family: 'VT323', monospace; font-size: clamp(13px,2vw,16px);
+  color: var(--phosphor-dim); text-align: center;
+}
+#botcheck-input {
+  background: rgba(0,0,0,0.6); border: 1px solid var(--brass-dark);
+  border-bottom: 2px solid var(--brass); color: var(--amber);
+  font-family: 'Courier Prime', monospace; font-size: 28px;
+  padding: 8px 12px; outline: none; width: 100%; text-align: center; letter-spacing: 0.2em;
+}
+#botcheck-input:focus { border-color: var(--brass-shine); }
 
-  #channel-label {
-    font-family: 'VT323', monospace;
-    font-size: clamp(14px,2.5vw,20px);
-    color: var(--phosphor);
-    letter-spacing: 0.12em;
-    text-shadow: 0 0 8px var(--phosphor);
-  }
+/* ── Account overlay tabs ─────────────────────────────────────────── */
+#account-overlay .panel { max-width: 360px; }
+.acc-tabs { display: flex; gap: 0; }
+.acc-tab {
+  flex: 1; font-family: 'Special Elite', serif; font-size: 11px; letter-spacing: 0.08em;
+  color: var(--brass-dark); border: 1px solid var(--brass-dark);
+  background: transparent; cursor: pointer; padding: 5px; text-align: center;
+  transition: all 0.15s;
+}
+.acc-tab:first-child { border-radius: 2px 0 0 2px; }
+.acc-tab:last-child  { border-radius: 0 2px 2px 0; border-left: none; }
+.acc-tab.active      { background: rgba(200,148,26,0.15); color: var(--brass-shine); border-color: var(--brass); }
+.acc-section { display: none; flex-direction: column; gap: 12px; }
+.acc-section.active { display: flex; }
 
-  #status-live {
-    font-family: 'VT323', monospace;
-    font-size: clamp(12px,2vw,16px);
-    color: var(--led-green);
-    text-shadow: 0 0 6px var(--led-green);
-    animation: blink 1s ease-in-out infinite;
-  }
+/* ── Link disclaimer overlay ──────────────────────────────────────── */
+#link-overlay .panel { max-width: 380px; }
+#link-overlay .panel-title { color: var(--amber); }
+#link-url {
+  font-family: 'Courier Prime', monospace; font-size: 11px;
+  color: var(--phosphor-dim); word-break: break-all; text-align: center;
+  background: rgba(0,0,0,0.4); padding: 6px 8px; border: 1px solid var(--phosphor-lo);
+}
+.link-btn-row { display: flex; gap: 10px; }
+.link-btn-row .panel-btn { width: auto; flex: 1; }
+.link-btn-row .panel-btn.cancel { background: linear-gradient(160deg, #3a1a0a 0%, #1a0a04 100%); color: var(--red-err); border-color: var(--red-err); }
 
-  /* ── Search bar ───────────────────────────────────────────────────── */
-  #search-bar {
-    display: none;
-    flex-direction: column;
-    gap: 4px;
-    padding: 6px clamp(8px,2vw,16px);
-    border-bottom: 1px solid var(--phosphor-lo);
-    background: rgba(0,30,0,0.5);
-    flex-shrink: 0;
-  }
-  #search-bar.open { display: flex; }
+/* ── Muted overlay ────────────────────────────────────────────────── */
+#muted-overlay .panel { max-width: 340px; text-align: center; }
+#muted-overlay .panel-title { color: var(--red-err); }
 
-  .search-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+/* ── Reverify overlay ─────────────────────────────────────────────── */
+#reverify-overlay .panel { max-width: 340px; }
 
-  .search-label {
-    font-family: 'VT323', monospace;
-    font-size: clamp(12px,2vw,15px);
-    color: var(--phosphor-dim);
-    white-space: nowrap;
-  }
-
-  .search-input {
-    background: rgba(0,20,0,0.8);
-    border: 1px solid var(--phosphor-lo);
-    color: var(--phosphor);
-    font-family: 'VT323', monospace;
-    font-size: clamp(13px,2vw,16px);
-    padding: 2px 6px;
-    outline: none;
-    flex: 1;
-    min-width: 80px;
-  }
-  .search-input:focus { border-color: var(--phosphor-dim); }
-  .search-input::placeholder { color: var(--phosphor-lo); }
-
-  select.search-input option { background: #0a160a; }
-
-  #search-results-count {
-    font-family: 'VT323', monospace;
-    font-size: clamp(11px,1.8vw,14px);
-    color: var(--phosphor-dim);
-    padding: 0 clamp(8px,2vw,16px);
-  }
-
-  /* ── Message feed ─────────────────────────────────────────────────── */
-  #feed {
-    flex: 1; min-height: 0;
-    overflow-y: auto;
-    padding: clamp(6px,1.5vw,14px) clamp(8px,2vw,16px);
-    scroll-behavior: smooth;
-  }
-
-  #feed::-webkit-scrollbar { width: 6px; }
-  #feed::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
-  #feed::-webkit-scrollbar-thumb { background: var(--phosphor-lo); border-radius: 3px; }
-
-  .msg-line {
-    font-family: 'VT323', monospace;
-    font-size: clamp(15px,2.5vw,20px);
-    line-height: 1.4;
-    color: var(--phosphor);
-    text-shadow: 0 0 6px rgba(78,255,145,0.4);
-    margin-bottom: 2px;
-    word-break: break-word;
-    transition: opacity 0.2s;
-  }
-  .msg-line.own { color: var(--amber); text-shadow: 0 0 6px rgba(255,221,68,0.4); }
-  .msg-line.system { color: var(--phosphor-dim); font-style: italic; }
-  .msg-line.error-msg { color: var(--red-err); }
-  .msg-line.hidden { display: none; }
-  .msg-line.highlight { background: rgba(78,255,145,0.08); border-left: 2px solid var(--phosphor); padding-left: 4px; }
-
-  .ts { color: var(--phosphor-lo); }
-  .handle { color: var(--phosphor); font-weight: bold; }
-  .msg-line.own .handle { color: var(--amber-hi); }
-
-  /* ── Controls bar ─────────────────────────────────────────────────── */
-  #controls {
-    border-top: 1px solid var(--brass-dark);
-    padding: clamp(6px,1.5vw,12px) clamp(8px,2vw,16px);
-    display: flex; flex-direction: column; gap: clamp(4px,1vw,8px);
-    flex-shrink: 0;
-    background: rgba(0,0,0,0.3);
-  }
-
-  .control-row { display: flex; gap: clamp(4px,1vw,8px); align-items: center; flex-wrap: wrap; }
-
-  .ctrl-label {
-    font-family: 'Special Elite', serif;
-    font-size: clamp(10px,1.8vw,13px);
-    color: var(--brass);
-    letter-spacing: 0.08em;
-    white-space: nowrap;
-  }
-
-  .ctrl-input {
-    background: rgba(10,5,0,0.8);
-    border: 1px solid var(--brass-dark);
-    border-bottom: 2px solid var(--brass);
-    color: var(--amber);
-    font-family: 'Courier Prime', monospace;
-    font-size: clamp(13px,2vw,16px);
-    padding: clamp(3px,0.8vw,6px) clamp(6px,1.2vw,10px);
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-  .ctrl-input:focus {
-    border-color: var(--brass-shine);
-    box-shadow: 0 0 8px rgba(200,148,26,0.3);
-  }
-
-  #handle-input { flex: 1; min-width: 80px; max-width: 200px; }
-  #flag-display {
-    font-size: clamp(16px,3vw,22px);
-    cursor: pointer;
-    padding: 2px 6px;
-    border: 1px solid var(--brass-dark);
-    background: rgba(10,5,0,0.6);
-    border-radius: 2px;
-    transition: border-color 0.15s;
-  }
-  #flag-display:hover { border-color: var(--brass); }
-
-  #change-btn, #search-toggle-btn {
-    font-family: 'Special Elite', serif;
-    font-size: clamp(10px,1.8vw,13px);
-    background: linear-gradient(160deg, var(--brass) 0%, var(--brass-dark) 100%);
-    color: #1a0e00;
-    border: 1px solid var(--brass-shine);
-    padding: clamp(4px,0.8vw,7px) clamp(8px,1.5vw,14px);
-    cursor: pointer;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    transition: filter 0.15s, transform 0.1s;
-    white-space: nowrap;
-  }
-  #change-btn:hover, #search-toggle-btn:hover { filter: brightness(1.2); }
-  #change-btn:active, #search-toggle-btn:active { transform: scale(0.97); }
-  #search-toggle-btn { background: linear-gradient(160deg, #2a4a2a 0%, #1a2e1a 100%); color: var(--phosphor); border-color: var(--phosphor-lo); }
-  #search-toggle-btn.active { background: linear-gradient(160deg, #1a4a1a 0%, #0a2e0a 100%); border-color: var(--phosphor); }
-
-  #msg-input {
-    flex: 1;
-    background: rgba(0,8,0,0.9);
-    border: 1px solid var(--phosphor-lo);
-    border-bottom: 2px solid var(--phosphor-dim);
-    color: var(--phosphor);
-    font-family: 'VT323', monospace;
-    font-size: clamp(16px,2.8vw,22px);
-    padding: clamp(4px,1vw,8px) clamp(8px,1.5vw,12px);
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  #msg-input:focus { border-color: var(--phosphor); box-shadow: 0 0 8px rgba(78,255,145,0.2); }
-  #msg-input::placeholder { color: var(--phosphor-lo); }
-
-  #send-btn {
-    font-family: 'Special Elite', serif;
-    font-size: clamp(11px,2vw,14px);
-    background: linear-gradient(160deg, var(--brass) 0%, var(--brass-dark) 100%);
-    color: #1a0e00;
-    border: 1px solid var(--brass-shine);
-    padding: clamp(4px,1vw,8px) clamp(12px,2vw,20px);
-    cursor: pointer;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    transition: filter 0.15s, transform 0.1s;
-    white-space: nowrap;
-  }
-  #send-btn:hover { filter: brightness(1.2); }
-  #send-btn:active { transform: scale(0.97); }
-
-  /* ── Status bar ───────────────────────────────────────────────────── */
-  #statusbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: clamp(4px,0.8vw,8px) clamp(8px,2vw,16px);
-    border-top: 1px solid var(--wood-mid);
-    flex-shrink: 0;
-    gap: 8px; flex-wrap: wrap;
-  }
-
-  .status-item {
-    font-family: 'VT323', monospace;
-    font-size: clamp(12px,2vw,16px);
-    color: var(--phosphor-dim);
-    border: 1px solid var(--phosphor-lo);
-    padding: 1px clamp(6px,1.2vw,10px);
-    white-space: nowrap;
-  }
-  .status-item span { color: var(--phosphor); }
-
-  .status-leds { display: flex; gap: clamp(4px,1vw,8px); }
-
-  /* ── Overlays ─────────────────────────────────────────────────────── */
-  .overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.85);
-    z-index: 100;
-    display: flex; align-items: center; justify-content: center;
-    padding: 16px;
-  }
-  .overlay.hidden { display: none; }
-
-  .panel {
-    background: linear-gradient(160deg, #5a3418 0%, #3a1e08 60%, #2a1208 100%);
-    border: 2px solid var(--brass);
-    box-shadow: 0 0 40px rgba(200,148,26,0.3), inset 0 0 20px rgba(0,0,0,0.5);
-    padding: clamp(16px,4vw,32px);
-    max-width: 480px; width: 100%;
-    display: flex; flex-direction: column; gap: 16px;
-  }
-
-  .panel-title {
-    font-family: 'Special Elite', serif;
-    font-size: clamp(16px,3vw,22px);
-    color: var(--brass-shine);
-    letter-spacing: 0.15em;
-    text-align: center;
-    text-shadow: 0 0 12px rgba(200,148,26,0.5);
-    border-bottom: 1px solid var(--brass-dark);
-    padding-bottom: 12px;
-  }
-
-  .panel-field { display: flex; flex-direction: column; gap: 6px; }
-  .panel-label {
-    font-family: 'Special Elite', serif;
-    font-size: clamp(11px,1.8vw,14px);
-    color: var(--brass);
-    letter-spacing: 0.08em;
-  }
-
-  .panel-input {
-    background: rgba(0,0,0,0.6);
-    border: 1px solid var(--brass-dark);
-    border-bottom: 2px solid var(--brass);
-    color: var(--amber);
-    font-family: 'Courier Prime', monospace;
-    font-size: clamp(14px,2.2vw,18px);
-    padding: 8px 12px;
-    outline: none;
-    width: 100%;
-  }
-  .panel-input:focus { border-color: var(--brass-shine); }
-
-  .flag-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
-    gap: 4px; max-height: 180px; overflow-y: auto;
-    border: 1px solid var(--brass-dark); padding: 6px; background: rgba(0,0,0,0.4);
-  }
-  .flag-grid::-webkit-scrollbar { width: 4px; }
-  .flag-grid::-webkit-scrollbar-thumb { background: var(--brass-dark); }
-
-  .flag-btn {
-    font-size: 20px; cursor: pointer; padding: 2px;
-    background: transparent; border: 1px solid transparent;
-    border-radius: 2px; text-align: center;
-    transition: border-color 0.1s, background 0.1s;
-  }
-  .flag-btn:hover { border-color: var(--brass); background: rgba(200,148,26,0.1); }
-  .flag-btn.selected { border-color: var(--brass-shine); background: rgba(200,148,26,0.2); }
-
-  .panel-btn {
-    font-family: 'Special Elite', serif;
-    font-size: clamp(13px,2vw,16px);
-    background: linear-gradient(160deg, var(--brass) 0%, var(--brass-dark) 100%);
-    color: #1a0e00;
-    border: 1px solid var(--brass-shine);
-    padding: 10px 20px;
-    cursor: pointer;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    width: 100%;
-    transition: filter 0.15s;
-  }
-  .panel-btn:hover { filter: brightness(1.15); }
-
-  .disclaimer {
-    font-family: 'Courier Prime', monospace;
-    font-size: clamp(9px,1.5vw,11px);
-    color: #888;
-    text-align: center;
-    line-height: 1.5;
-    border-top: 1px solid var(--brass-dark);
-    padding-top: 10px;
-  }
-  .disclaimer strong { color: var(--red-err); }
-
-  /* Bot check panel */
-  #botcheck-overlay .panel { max-width: 340px; }
-  #challenge-text {
-    font-family: 'VT323', monospace;
-    font-size: clamp(28px,6vw,48px);
-    color: var(--phosphor);
-    text-align: center;
-    text-shadow: 0 0 16px var(--phosphor);
-  }
-  #botcheck-hint {
-    font-family: 'VT323', monospace;
-    font-size: clamp(13px,2vw,16px);
-    color: var(--phosphor-dim);
-    text-align: center;
-  }
-
-  /* ── Mobile tweaks ────────────────────────────────────────────────── */
-  @media (max-width: 480px) {
-    #cabinet { padding: 4px; }
-    .control-row { gap: 4px; }
-    #handle-input { max-width: 130px; }
-    .search-row { gap: 4px; }
-  }
+/* ── Mobile ───────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  #cabinet { padding: 4px; }
+  .control-row { gap: 4px; }
+  #handle-input { max-width: 130px; }
+  .search-row { gap: 4px; }
+}
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════════════════ CABINET -->
+<!-- ═══════════════════════ CABINET ═══════════════════════ -->
 <div id="cabinet">
-
-  <!-- Header -->
   <div id="header">
     <div id="brand">WORLDCHAT MK—II</div>
     <div class="led-row">
@@ -508,45 +404,33 @@
     </div>
   </div>
 
-  <!-- Screen housing -->
   <div id="screen-housing">
     <div id="screen">
-
-      <!-- Screen header -->
       <div id="screen-header">
         <div id="channel-label">// WORLDWIDE OPEN CHANNEL //</div>
         <div id="status-live">● LIVE</div>
       </div>
-
-      <!-- Search bar (hidden by default) -->
       <div id="search-bar">
         <div class="search-row">
           <span class="search-label">TEXT:</span>
           <input class="search-input" id="search-text" type="text" placeholder="search messages…" autocomplete="off">
           <span class="search-label">FLAG:</span>
-          <select class="search-input" id="search-flag" style="width:70px">
-            <option value="">ALL</option>
-          </select>
+          <select class="search-input" id="search-flag" style="width:70px"><option value="">ALL</option></select>
           <span class="search-label">FROM:</span>
           <input class="search-input" id="search-from" type="time" style="width:80px">
           <span class="search-label">TO:</span>
-          <input class="search-input" id="search-to"   type="time" style="width:80px">
+          <input class="search-input" id="search-to" type="time" style="width:80px">
           <button class="panel-btn" id="search-clear-btn" style="width:auto;padding:2px 10px;font-size:12px">CLR</button>
         </div>
         <div id="search-results-count"></div>
       </div>
-
-      <!-- Message feed -->
       <div id="feed">
         <div class="msg-line system">— WORLDCHAT MK-II INITIALISING —</div>
       </div>
-
     </div>
   </div>
 
-  <!-- Controls -->
   <div id="controls">
-    <!-- Handle + flag + change + search -->
     <div class="control-row">
       <span class="ctrl-label">HANDLE:</span>
       <input class="ctrl-input" id="handle-input" type="text" maxlength="24" autocomplete="off" spellcheck="false">
@@ -554,75 +438,97 @@
       <div id="flag-display" title="Click to change flag">🌍</div>
       <button id="change-btn">CHANGE</button>
       <button id="search-toggle-btn" title="Toggle search">🔍</button>
+      <button id="account-btn" title="Account">◈ ACCOUNT</button>
     </div>
-    <!-- Message input -->
     <div class="control-row">
       <input class="ctrl-input" id="msg-input" type="text" maxlength="400"
-             placeholder="type your message… enter to send" autocomplete="off" spellcheck="false" style="flex:1">
+        placeholder="type your message… enter to send" autocomplete="off" spellcheck="false" style="flex:1">
       <button id="send-btn">SEND ▶▶</button>
     </div>
   </div>
 
-  <!-- Status bar -->
   <div id="statusbar">
     <div class="status-leds">
-      <div class="led green"  style="width:10px;height:10px"></div>
-      <div class="led off"    style="width:10px;height:10px"></div>
-      <div class="led off"    style="width:10px;height:10px"></div>
+      <div class="led green" style="width:10px;height:10px"></div>
+      <div class="led off"   style="width:10px;height:10px"></div>
+      <div class="led off"   style="width:10px;height:10px"></div>
     </div>
     <div class="status-item">ONLINE: <span id="online-count">—</span></div>
     <div class="status-item">MSGS: <span id="msg-count">0</span></div>
+    <div class="status-item" id="role-badge" style="display:none">ROLE: <span id="role-text">—</span></div>
     <div class="status-leds">
-      <div class="led off"    style="width:10px;height:10px"></div>
-      <div class="led off"    style="width:10px;height:10px"></div>
-      <div class="led amber"  style="width:10px;height:10px"></div>
+      <div class="led off"   style="width:10px;height:10px"></div>
+      <div class="led off"   style="width:10px;height:10px"></div>
+      <div class="led amber" style="width:10px;height:10px"></div>
     </div>
   </div>
+</div>
 
-</div><!-- /cabinet -->
-
-<!-- ═══════════════════════════════════════════════════════════ SETUP OVERLAY -->
+<!-- ═══════════════ SETUP OVERLAY ═══════════════ -->
 <div class="overlay" id="setup-overlay">
   <div class="panel">
     <div class="panel-title">◈ WORLDCHAT MK-II ◈</div>
-
     <div class="panel-field">
       <div class="panel-label">CALLSIGN / HANDLE</div>
       <input class="panel-input" id="setup-handle" type="text" maxlength="24"
-             placeholder="e.g. drifter_77" autocomplete="off" spellcheck="false">
+        placeholder="e.g. drifter_77" autocomplete="off" spellcheck="false">
     </div>
-
     <div class="panel-field">
       <div class="panel-label">YOUR COUNTRY</div>
       <div class="flag-grid" id="flag-grid"></div>
     </div>
-
+    <!-- Turnstile widget -->
+    <div id="turnstile-wrap" style="display:flex;justify-content:center;min-height:65px;align-items:center">
+      <div id="turnstile-widget"></div>
+      <div id="turnstile-skip" style="font-family:'VT323',monospace;font-size:14px;color:var(--phosphor-dim);display:none">
+        ✓ TURNSTILE VERIFIED
+      </div>
+    </div>
     <button class="panel-btn" id="setup-join-btn">▶ JOIN THE CHANNEL</button>
-
+    <div class="panel-err" id="setup-err"></div>
     <div class="disclaimer">
       <strong>⚠ PUBLIC CHANNEL — NO ENCRYPTION</strong><br>
       All messages are visible to everyone. This chat is completely open,
-      unencrypted, and unmoderated. Do not share personal information.<br>
+      unencrypted. Do not share personal information.<br>
       Links are automatically filtered. By joining you accept these terms.
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ BOT CHECK OVERLAY -->
+<!-- ═══════════════ BOT CHECK OVERLAY ═══════════════ -->
 <div class="overlay hidden" id="botcheck-overlay">
   <div class="panel">
     <div class="panel-title">◈ HUMAN VERIFICATION ◈</div>
-    <div id="botcheck-hint">Solve to enter the channel:</div>
-    <div id="challenge-text">? + ? = ?</div>
+    <div id="botcheck-hint">Solve the equation to enter:</div>
+    <canvas id="botcheck-canvas" width="280" height="80"></canvas>
     <div class="panel-field">
-      <input class="panel-input" id="botcheck-input" type="number" placeholder="your answer"
-             style="text-align:center;font-size:28px">
+      <input id="botcheck-input" type="number" placeholder="your answer" autocomplete="off">
     </div>
     <button class="panel-btn" id="botcheck-submit-btn">▶ SUBMIT</button>
+    <div class="panel-err" id="botcheck-err"></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ FLAG PICKER OVERLAY -->
+<!-- ═══════════════ RE-VERIFY OVERLAY ═══════════════ -->
+<div class="overlay hidden" id="reverify-overlay">
+  <div class="panel">
+    <div class="panel-title">◈ RE-VERIFICATION ◈</div>
+    <div id="reverify-hint" style="font-family:'VT323',monospace;font-size:16px;color:var(--phosphor-dim);text-align:center">
+      Hourly check — solve to continue:
+    </div>
+    <canvas id="reverify-canvas" width="280" height="80"></canvas>
+    <div class="panel-field">
+      <input id="reverify-input" type="number" placeholder="your answer" autocomplete="off"
+        style="background:rgba(0,0,0,0.6);border:1px solid var(--brass-dark);border-bottom:2px solid var(--brass);
+               color:var(--amber);font-family:'Courier Prime',monospace;font-size:28px;
+               padding:8px 12px;outline:none;width:100%;text-align:center;letter-spacing:0.2em;">
+    </div>
+    <button class="panel-btn" id="reverify-submit-btn">▶ VERIFY</button>
+    <div class="panel-err" id="reverify-err"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ FLAG OVERLAY ═══════════════ -->
 <div class="overlay hidden" id="flag-overlay">
   <div class="panel" style="max-width:400px">
     <div class="panel-title">◈ SELECT FLAG ◈</div>
@@ -631,8 +537,87 @@
   </div>
 </div>
 
+<!-- ═══════════════ ACCOUNT OVERLAY ═══════════════ -->
+<div class="overlay hidden" id="account-overlay">
+  <div class="panel">
+    <div class="panel-title">◈ ACCOUNT ◈</div>
+    <div class="acc-tabs">
+      <button class="acc-tab active" id="tab-login" onclick="switchAccTab('login')">LOGIN</button>
+      <button class="acc-tab" id="tab-register" onclick="switchAccTab('register')">REGISTER</button>
+    </div>
+    <!-- Login -->
+    <div class="acc-section active" id="acc-login">
+      <div class="panel-field">
+        <div class="panel-label">HANDLE</div>
+        <input class="panel-input" id="login-handle" type="text" maxlength="24" autocomplete="off">
+      </div>
+      <div class="panel-field">
+        <div class="panel-label">PASSWORD</div>
+        <input class="panel-input" id="login-pw" type="password" autocomplete="off">
+      </div>
+      <button class="panel-btn" id="login-btn">▶ LOGIN</button>
+      <div class="panel-err" id="login-err"></div>
+    </div>
+    <!-- Register -->
+    <div class="acc-section" id="acc-register">
+      <div class="panel-field">
+        <div class="panel-label">HANDLE</div>
+        <input class="panel-input" id="reg-handle" type="text" maxlength="24" autocomplete="off">
+      </div>
+      <div class="panel-field">
+        <div class="panel-label">PASSWORD (min 4 chars)</div>
+        <input class="panel-input" id="reg-pw" type="password" autocomplete="off">
+      </div>
+      <button class="panel-btn" id="reg-btn">▶ REGISTER</button>
+      <div class="panel-err" id="reg-err"></div>
+      <div style="font-family:'Courier Prime',monospace;font-size:10px;color:#666;text-align:center;line-height:1.4">
+        Registered users get paste privileges in chat.<br>
+        Accounts reset on server restart (in-memory only).
+      </div>
+    </div>
+    <button class="panel-btn secondary" onclick="document.getElementById('account-overlay').classList.add('hidden')">CLOSE</button>
+  </div>
+</div>
+
+<!-- ═══════════════ LINK DISCLAIMER OVERLAY ═══════════════ -->
+<div class="overlay hidden" id="link-overlay">
+  <div class="panel">
+    <div class="panel-title">⚠ EXTERNAL LINK</div>
+    <div style="font-family:'VT323',monospace;font-size:15px;color:var(--phosphor-dim);text-align:center;line-height:1.5">
+      This link is not part of WorldChat.<br>
+      The owner is not responsible for any damages.
+    </div>
+    <div id="link-url"></div>
+    <div class="link-btn-row">
+      <button class="panel-btn cancel" id="link-cancel-btn">✕ CANCEL</button>
+      <button class="panel-btn" id="link-proceed-btn">▶ PROCEED</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MUTED OVERLAY ═══════════════ -->
+<div class="overlay hidden" id="muted-overlay">
+  <div class="panel">
+    <div class="panel-title">⛔ MUTED</div>
+    <div style="font-family:'VT323',monospace;font-size:18px;color:var(--phosphor-dim);text-align:center;line-height:1.5">
+      You have been muted for 1 hour.<br>
+      You can still read the channel.
+    </div>
+    <button class="panel-btn" onclick="document.getElementById('muted-overlay').classList.add('hidden')">OK</button>
+  </div>
+</div>
+
+<!-- ═══════════════ CONTEXT MENU ═══════════════ -->
+<div id="ctx-menu">
+  <div class="ctx-item" id="ctx-vote">🗳 Vote to mute</div>
+  <div class="ctx-item danger" id="ctx-kick" style="display:none">⚡ Kick (mod)</div>
+  <div class="ctx-item danger" id="ctx-ban"  style="display:none">🚫 Ban (owner)</div>
+</div>
+
 <script>
-// ── Flag data ──────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════════════════════
 const FLAGS = [
   {f:'🌍',n:'Global'},{f:'🇺🇸',n:'US'},{f:'🇬🇧',n:'UK'},{f:'🇨🇦',n:'CA'},
   {f:'🇲🇽',n:'MX'},{f:'🇧🇷',n:'BR'},{f:'🇦🇷',n:'AR'},{f:'🇨🇱',n:'CL'},
@@ -651,54 +636,149 @@ const FLAGS = [
   {f:'🇳🇿',n:'NZ'},{f:'🇨🇺',n:'CU'},{f:'🇵🇷',n:'PR'},{f:'🇺🇾',n:'UY'},
 ];
 
-// ── State ──────────────────────────────────────────────────────────────────
-let ws = null;
+// ══════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════
+let ws             = null;
 let reconnectDelay = 1500;
-let myHandle = '';
-let myFlag = '🌍';
-let msgCount = 0;
-let allMessages = []; // {el, ts, flag, text}
-let searchOpen = false;
+let myHandle       = '';
+let myFlag         = '🌍';
+let myRole         = 'guest';      // guest | user | mod | owner
+let isRegistered   = false;
+let msgCount       = 0;
+let allMessages    = [];           // { el, ts, flag, text, handle }
+let searchOpen     = false;
+let setupFlag      = '🌍';
+let turnstileToken = null;
+let pendingLinkUrl = null;
+let ctxTargetHandle= null;
 
-// ── DOM refs ───────────────────────────────────────────────────────────────
-const feed            = document.getElementById('feed');
-const onlineEl        = document.getElementById('online-count');
-const msgCountEl      = document.getElementById('msg-count');
-const handleInput     = document.getElementById('handle-input');
-const flagDisplay     = document.getElementById('flag-display');
-const changeBtn       = document.getElementById('change-btn');
-const msgInput        = document.getElementById('msg-input');
-const sendBtn         = document.getElementById('send-btn');
-const searchToggleBtn = document.getElementById('search-toggle-btn');
-const searchBar       = document.getElementById('search-bar');
-const searchText      = document.getElementById('search-text');
-const searchFlag      = document.getElementById('search-flag');
-const searchFrom      = document.getElementById('search-from');
-const searchTo        = document.getElementById('search-to');
-const searchClearBtn  = document.getElementById('search-clear-btn');
-const searchCount     = document.getElementById('search-results-count');
-const setupOverlay    = document.getElementById('setup-overlay');
-const setupHandle     = document.getElementById('setup-handle');
-const setupJoinBtn    = document.getElementById('setup-join-btn');
-const flagGrid        = document.getElementById('flag-grid');
-const botcheckOverlay = document.getElementById('botcheck-overlay');
-const challengeText   = document.getElementById('challenge-text');
-const botcheckInput   = document.getElementById('botcheck-input');
-const botcheckBtn     = document.getElementById('botcheck-submit-btn');
-const flagOverlay     = document.getElementById('flag-overlay');
-const flagOverlayGrid = document.getElementById('flag-overlay-grid');
-const flagCloseBtn    = document.getElementById('flag-close-btn');
-const ledConn         = document.getElementById('led-conn');
-const ledErr          = document.getElementById('led-err');
+// ══════════════════════════════════════════════════════════
+//  DOM REFS
+// ══════════════════════════════════════════════════════════
+const feed           = document.getElementById('feed');
+const onlineEl       = document.getElementById('online-count');
+const msgCountEl     = document.getElementById('msg-count');
+const handleInput    = document.getElementById('handle-input');
+const flagDisplay    = document.getElementById('flag-display');
+const changeBtn      = document.getElementById('change-btn');
+const msgInput       = document.getElementById('msg-input');
+const sendBtn        = document.getElementById('send-btn');
+const searchToggleBtn= document.getElementById('search-toggle-btn');
+const searchBar      = document.getElementById('search-bar');
+const searchText     = document.getElementById('search-text');
+const searchFlag     = document.getElementById('search-flag');
+const searchFrom     = document.getElementById('search-from');
+const searchTo       = document.getElementById('search-to');
+const searchClearBtn = document.getElementById('search-clear-btn');
+const searchCount    = document.getElementById('search-results-count');
+const setupOverlay   = document.getElementById('setup-overlay');
+const setupHandle    = document.getElementById('setup-handle');
+const setupJoinBtn   = document.getElementById('setup-join-btn');
+const setupErr       = document.getElementById('setup-err');
+const flagGrid       = document.getElementById('flag-grid');
+const botcheckOverlay= document.getElementById('botcheck-overlay');
+const botcheckCanvas = document.getElementById('botcheck-canvas');
+const botcheckInput  = document.getElementById('botcheck-input');
+const botcheckBtn    = document.getElementById('botcheck-submit-btn');
+const botcheckErr    = document.getElementById('botcheck-err');
+const reverifyOverlay= document.getElementById('reverify-overlay');
+const reverifyCanvas = document.getElementById('reverify-canvas');
+const reverifyInput  = document.getElementById('reverify-input');
+const reverifyBtn    = document.getElementById('reverify-submit-btn');
+const reverifyErr    = document.getElementById('reverify-err');
+const flagOverlay    = document.getElementById('flag-overlay');
+const flagOverlayGrid= document.getElementById('flag-overlay-grid');
+const flagCloseBtn   = document.getElementById('flag-close-btn');
+const accountOverlay = document.getElementById('account-overlay');
+const accountBtn     = document.getElementById('account-btn');
+const linkOverlay    = document.getElementById('link-overlay');
+const linkUrl        = document.getElementById('link-url');
+const linkCancelBtn  = document.getElementById('link-cancel-btn');
+const linkProceedBtn = document.getElementById('link-proceed-btn');
+const mutedOverlay   = document.getElementById('muted-overlay');
+const ctxMenu        = document.getElementById('ctx-menu');
+const ctxVote        = document.getElementById('ctx-vote');
+const ctxKick        = document.getElementById('ctx-kick');
+const ctxBan         = document.getElementById('ctx-ban');
+const ledConn        = document.getElementById('led-conn');
+const ledErr         = document.getElementById('led-err');
+const roleBadge      = document.getElementById('role-badge');
+const roleText       = document.getElementById('role-text');
 
-// ── Build flag grids ───────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+//  CANVAS BOTCHECK RENDERER
+// ══════════════════════════════════════════════════════════
+function drawChallenge(canvas, question) {
+  const ctx  = canvas.getContext('2d');
+  const W    = canvas.width;
+  const H    = canvas.height;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#020a02';
+  ctx.fillRect(0, 0, W, H);
+
+  // Noise dots
+  for (let i = 0; i < 300; i++) {
+    ctx.fillStyle = `rgba(78,255,145,${Math.random() * 0.15})`;
+    ctx.fillRect(Math.random()*W, Math.random()*H, 1, 1);
+  }
+
+  // Distortion lines
+  for (let i = 0; i < 6; i++) {
+    ctx.strokeStyle = `rgba(78,255,145,${Math.random() * 0.12})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(Math.random()*W, Math.random()*H);
+    ctx.bezierCurveTo(Math.random()*W, Math.random()*H, Math.random()*W, Math.random()*H, Math.random()*W, Math.random()*H);
+    ctx.stroke();
+  }
+
+  // Draw each character with individual distortion
+  const text  = `${question} = ?`;
+  const chars = text.split('');
+  const startX= 20;
+  let cx = startX;
+
+  chars.forEach((ch, i) => {
+    ctx.save();
+    const size  = 28 + Math.random() * 10;
+    const angle = (Math.random() - 0.5) * 0.35;
+    const tx    = cx + Math.random() * 2 - 1;
+    const ty    = H/2 + 6 + (Math.random() - 0.5) * 10;
+
+    ctx.translate(tx, ty);
+    ctx.rotate(angle);
+
+    // Slight wave
+    const wave = Math.sin(i * 1.1) * 4;
+    ctx.translate(0, wave);
+
+    ctx.font = `bold ${size}px "Courier New", monospace`;
+
+    // Glow
+    ctx.shadowColor   = '#4eff91';
+    ctx.shadowBlur    = 8 + Math.random() * 6;
+    ctx.fillStyle     = `hsl(${140 + Math.random()*20}, 100%, ${55 + Math.random()*20}%)`;
+    ctx.fillText(ch, 0, 0);
+
+    ctx.restore();
+    cx += size * 0.62 + 2;
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  FLAG GRIDS
+// ══════════════════════════════════════════════════════════
 function buildFlagGrid(container, onSelect) {
   container.innerHTML = '';
   FLAGS.forEach(({f, n}) => {
     const btn = document.createElement('button');
-    btn.className = 'flag-btn';
+    btn.className   = 'flag-btn';
     btn.textContent = f;
-    btn.title = n;
+    btn.title       = n;
     btn.addEventListener('click', () => {
       container.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
@@ -708,34 +788,126 @@ function buildFlagGrid(container, onSelect) {
   });
 }
 
-let setupFlag = '🌍';
-buildFlagGrid(flagGrid, (f) => { setupFlag = f; });
+buildFlagGrid(flagGrid,        (f) => { setupFlag = f; });
 buildFlagGrid(flagOverlayGrid, (f) => { myFlag = f; flagDisplay.textContent = f; });
-
-// Pre-select first flag in setup
 flagGrid.querySelector('.flag-btn').classList.add('selected');
 
 // Populate search flag dropdown
-const allOpt = document.createElement('option');
-allOpt.value = ''; allOpt.textContent = 'ALL';
-searchFlag.appendChild(allOpt);
 FLAGS.forEach(({f, n}) => {
   const opt = document.createElement('option');
   opt.value = f; opt.textContent = `${f} ${n}`;
   searchFlag.appendChild(opt);
 });
 
-// ── Flag overlay toggle ────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+//  TURNSTILE
+// ══════════════════════════════════════════════════════════
+// Rendered after DOM is ready
+function initTurnstile() {
+  if (typeof turnstile === 'undefined') {
+    // Turnstile not loaded (dev / blocked) — proceed without it
+    turnstileToken = '__dev__';
+    document.getElementById('turnstile-wrap').innerHTML =
+      '<div style="font-family:\'VT323\',monospace;font-size:13px;color:var(--phosphor-dim)">TURNSTILE: DEV MODE (SKIP)</div>';
+    return;
+  }
+  turnstile.render('#turnstile-widget', {
+    sitekey:  '0x4AAAAAACvgILFP3zcCRU93',
+    theme:    'dark',
+    size:     'compact',
+    callback: (token) => {
+      turnstileToken = token;
+      document.getElementById('turnstile-skip').style.display = 'block';
+      document.getElementById('turnstile-widget').style.display = 'none';
+    },
+    'error-callback': () => {
+      setupErr.textContent = 'Turnstile error. Please refresh.';
+    }
+  });
+}
+window.addEventListener('load', () => {
+  // Small delay to let Turnstile script load
+  setTimeout(initTurnstile, 500);
+});
+
+// ══════════════════════════════════════════════════════════
+//  PASTE RESTRICTION
+// ══════════════════════════════════════════════════════════
+msgInput.addEventListener('paste', (e) => {
+  if (!isRegistered) {
+    e.preventDefault();
+    showError('Register or log in to paste text.');
+  }
+});
+
+// ══════════════════════════════════════════════════════════
+//  LINK INTERCEPTION
+// ══════════════════════════════════════════════════════════
+feed.addEventListener('click', (e) => {
+  const a = e.target.closest('a');
+  if (!a) return;
+  e.preventDefault();
+  pendingLinkUrl = a.href;
+  linkUrl.textContent = a.href;
+  linkOverlay.classList.remove('hidden');
+});
+linkCancelBtn.addEventListener('click', () => {
+  linkOverlay.classList.add('hidden');
+  pendingLinkUrl = null;
+});
+linkProceedBtn.addEventListener('click', () => {
+  if (pendingLinkUrl) window.open(pendingLinkUrl, '_blank', 'noopener,noreferrer');
+  linkOverlay.classList.add('hidden');
+  pendingLinkUrl = null;
+});
+
+// ══════════════════════════════════════════════════════════
+//  CONTEXT MENU (vote-kick / mod actions)
+// ══════════════════════════════════════════════════════════
+document.addEventListener('contextmenu', (e) => {
+  const line = e.target.closest('.msg-line[data-handle]');
+  if (!line) { ctxMenu.style.display = 'none'; return; }
+  e.preventDefault();
+  const target = line.dataset.handle;
+  if (!target || target === myHandle) return;
+  ctxTargetHandle = target;
+  ctxKick.style.display = (myRole === 'mod' || myRole === 'owner') ? 'block' : 'none';
+  ctxBan.style.display  = (myRole === 'owner') ? 'block' : 'none';
+  ctxMenu.style.left    = Math.min(e.clientX, window.innerWidth  - 160) + 'px';
+  ctxMenu.style.top     = Math.min(e.clientY, window.innerHeight - 120) + 'px';
+  ctxMenu.style.display = 'block';
+});
+document.addEventListener('click', () => { ctxMenu.style.display = 'none'; });
+
+ctxVote.addEventListener('click', () => {
+  if (!ctxTargetHandle || !ws) return;
+  ws.send(JSON.stringify({ type:'votekick', target: ctxTargetHandle }));
+  appendMessage({ type:'system', text:`You voted to mute ${ctxTargetHandle}.`, ts: Date.now() });
+});
+ctxKick.addEventListener('click', () => {
+  if (!ctxTargetHandle || !ws) return;
+  ws.send(JSON.stringify({ type:'kick', target: ctxTargetHandle }));
+});
+ctxBan.addEventListener('click', () => {
+  if (!ctxTargetHandle || !ws) return;
+  if (confirm(`Permanently ban ${ctxTargetHandle}?`))
+    ws.send(JSON.stringify({ type:'ban', target: ctxTargetHandle }));
+});
+
+// ══════════════════════════════════════════════════════════
+//  FLAG OVERLAY TOGGLE
+// ══════════════════════════════════════════════════════════
 flagDisplay.addEventListener('click', () => {
   flagOverlay.classList.remove('hidden');
-  // Mark current flag as selected
   flagOverlayGrid.querySelectorAll('.flag-btn').forEach(b => {
     b.classList.toggle('selected', b.textContent === myFlag);
   });
 });
 flagCloseBtn.addEventListener('click', () => flagOverlay.classList.add('hidden'));
 
-// ── Search toggle ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+//  SEARCH
+// ══════════════════════════════════════════════════════════
 searchToggleBtn.addEventListener('click', () => {
   searchOpen = !searchOpen;
   searchBar.classList.toggle('open', searchOpen);
@@ -744,54 +916,87 @@ searchToggleBtn.addEventListener('click', () => {
 });
 
 function runSearch() {
-  const query = searchText.value.trim().toLowerCase();
-  const flagFilter = searchFlag.value;
-  const fromStr = searchFrom.value;
-  const toStr   = searchTo.value;
-
+  const q    = searchText.value.trim().toLowerCase();
+  const filt = searchFlag.value;
+  const from = searchFrom.value;
+  const to   = searchTo.value;
   let visible = 0;
   allMessages.forEach(({el, ts, flag, text}) => {
-    const d = new Date(ts);
+    const d    = new Date(ts);
     const hhmm = `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`;
-
-    let show = true;
-    if (query && !text.toLowerCase().includes(query)) show = false;
-    if (flagFilter && flag !== flagFilter) show = false;
-    if (fromStr && hhmm < fromStr) show = false;
-    if (toStr   && hhmm > toStr)   show = false;
-
+    let show   = true;
+    if (q    && !text.toLowerCase().includes(q)) show = false;
+    if (filt && flag !== filt)                   show = false;
+    if (from && hhmm < from)                     show = false;
+    if (to   && hhmm > to)                       show = false;
     el.classList.toggle('hidden', !show);
-    el.classList.toggle('highlight', show && !!query);
+    el.classList.toggle('highlight', show && !!q);
     if (show) visible++;
   });
-
   const total = allMessages.length;
-  searchCount.textContent = query || flagFilter || fromStr || toStr
-    ? `${visible} / ${total} messages match`
-    : '';
+  searchCount.textContent = (q || filt || from || to) ? `${visible} / ${total} messages match` : '';
 }
-
 function clearSearch() {
-  searchText.value = '';
-  searchFlag.value = '';
-  searchFrom.value = '';
-  searchTo.value   = '';
-  allMessages.forEach(({el}) => { el.classList.remove('hidden', 'highlight'); });
+  searchText.value = ''; searchFlag.value = ''; searchFrom.value = ''; searchTo.value = '';
+  allMessages.forEach(({el}) => el.classList.remove('hidden','highlight'));
   searchCount.textContent = '';
 }
-
 searchText.addEventListener('input', runSearch);
 searchFlag.addEventListener('change', runSearch);
 searchFrom.addEventListener('change', runSearch);
 searchTo.addEventListener('change', runSearch);
 searchClearBtn.addEventListener('click', clearSearch);
 
-// ── Message helpers ────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+//  ACCOUNT PANEL
+// ══════════════════════════════════════════════════════════
+accountBtn.addEventListener('click', () => accountOverlay.classList.remove('hidden'));
+
+function switchAccTab(tab) {
+  document.querySelectorAll('.acc-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.acc-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('acc-' + tab).classList.add('active');
+}
+
+document.getElementById('login-btn').addEventListener('click', () => {
+  const h  = document.getElementById('login-handle').value.trim();
+  const pw = document.getElementById('login-pw').value.trim();
+  if (!h || !pw) { document.getElementById('login-err').textContent = 'Fill all fields.'; return; }
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type:'login', handle: h, password: pw }));
+});
+document.getElementById('login-pw').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('login-btn').click();
+});
+
+document.getElementById('reg-btn').addEventListener('click', () => {
+  const h  = document.getElementById('reg-handle').value.trim();
+  const pw = document.getElementById('reg-pw').value.trim();
+  if (!h || !pw) { document.getElementById('reg-err').textContent = 'Fill all fields.'; return; }
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type:'register', handle: h, password: pw }));
+});
+document.getElementById('reg-pw').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('reg-btn').click();
+});
+
+// ══════════════════════════════════════════════════════════
+//  MESSAGE HELPERS
+// ══════════════════════════════════════════════════════════
 function formatTime(ts) {
   const d = new Date(ts);
-  const h = String(d.getUTCHours()).padStart(2,'0');
-  const m = String(d.getUTCMinutes()).padStart(2,'0');
-  return `${h}:${m} UTC`;
+  return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')} UTC`;
+}
+
+function showError(text) {
+  appendMessage({ type:'error', text });
+}
+
+function ledTx() {
+  const el = document.getElementById('led-tx');
+  el.style.opacity = '1';
+  setTimeout(() => el.style.opacity = '0.6', 120);
 }
 
 function appendMessage(data) {
@@ -800,19 +1005,17 @@ function appendMessage(data) {
 
   if (data.type === 'msg') {
     if (data.own) line.classList.add('own');
+    line.dataset.handle = data.handle;
     line.innerHTML =
       `<span class="ts">[${formatTime(data.ts)}]</span> ` +
       `${data.flag} <span class="handle">${data.handle}:</span> ${data.text}`;
-
-    allMessages.push({ el: line, ts: data.ts, flag: data.flag, text: data.text });
+    allMessages.push({ el: line, ts: data.ts, flag: data.flag, text: data.text, handle: data.handle });
     msgCount++;
     msgCountEl.textContent = msgCount;
-
   } else if (data.type === 'system') {
     line.classList.add('system');
     line.textContent = `— ${data.text} —`;
-    if (data.ts) allMessages.push({ el: line, ts: data.ts, flag: '', text: data.text });
-
+    if (data.ts) allMessages.push({ el: line, ts: data.ts, flag:'', text: data.text, handle:'' });
   } else if (data.type === 'error') {
     line.classList.add('error-msg');
     line.textContent = `⚠ ${data.text}`;
@@ -822,21 +1025,13 @@ function appendMessage(data) {
 
   feed.appendChild(line);
   feed.scrollTop = feed.scrollHeight;
-
-  // Flash TX led
   ledTx();
-
-  // Re-apply search if open
   if (searchOpen) runSearch();
 }
 
-function ledTx() {
-  const el = document.getElementById('led-tx');
-  el.style.opacity = '1';
-  setTimeout(() => el.style.opacity = '0.6', 120);
-}
-
-// ── WebSocket ──────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+//  WEBSOCKET
+// ══════════════════════════════════════════════════════════
 const WS_URL = location.hostname === 'localhost'
   ? `ws://${location.host}`
   : `wss://${location.host}`;
@@ -847,45 +1042,114 @@ function connect() {
   ws.addEventListener('open', () => {
     reconnectDelay = 1500;
     ledConn.className = 'led green';
-    // Send join with saved handle/flag
-    ws.send(JSON.stringify({ type: 'join', handle: myHandle, flag: myFlag }));
+    // Send Turnstile token first, then join
+    if (turnstileToken) {
+      ws.send(JSON.stringify({ type:'turnstile', token: turnstileToken }));
+    }
+    ws.send(JSON.stringify({ type:'join', handle: myHandle, flag: myFlag }));
   });
 
   ws.addEventListener('message', e => {
     let data;
     try { data = JSON.parse(e.data); } catch { return; }
 
-    if (data.type === 'history') {
-      data.messages.forEach(m => appendMessage(m));
-      return;
-    }
-
     if (data.type === 'online') {
       onlineEl.textContent = data.count;
       return;
     }
 
+    if (data.type === 'awaiting_turnstile') {
+      // Turnstile already sent on open; server just staged the handle
+      return;
+    }
+
+    if (data.type === 'history') {
+      data.messages.forEach(m => appendMessage(m));
+      return;
+    }
+
     if (data.type === 'challenge') {
-      challengeText.textContent = `${data.question} = ?`;
-      botcheckOverlay.classList.remove('hidden');
+      // Initial bot check
+      drawChallenge(botcheckCanvas, data.question);
+      botcheckErr.textContent = '';
       botcheckInput.value = '';
+      botcheckOverlay.classList.remove('hidden');
       setTimeout(() => botcheckInput.focus(), 100);
       return;
     }
 
     if (data.type === 'verified') {
       botcheckOverlay.classList.add('hidden');
-      appendMessage({ type: 'system', text: `${myHandle} ${myFlag} joined the channel`, ts: Date.now() });
+      return;
+    }
+
+    if (data.type === 'reverify') {
+      // Hourly re-check
+      drawChallenge(reverifyCanvas, data.question);
+      reverifyErr.textContent = '';
+      reverifyInput.value = '';
+      reverifyOverlay.classList.remove('hidden');
+      setTimeout(() => reverifyInput.focus(), 100);
+      return;
+    }
+
+    if (data.type === 'reverified') {
+      reverifyOverlay.classList.add('hidden');
       return;
     }
 
     if (data.type === 'renamed') {
       myHandle = data.handle;
       myFlag   = data.flag;
-      handleInput.value = myHandle;
+      handleInput.value     = myHandle;
       flagDisplay.textContent = myFlag;
       localStorage.setItem('wc_handle', myHandle);
-      localStorage.setItem('wc_flag', myFlag);
+      localStorage.setItem('wc_flag',   myFlag);
+      return;
+    }
+
+    if (data.type === 'registered') {
+      isRegistered = true;
+      accountOverlay.classList.add('hidden');
+      accountBtn.classList.add('loggedin');
+      accountBtn.textContent = '◈ ACCOUNT ✓';
+      appendMessage({ type:'system', text:`Registered as ${data.handle}. Paste now enabled.`, ts: Date.now() });
+      return;
+    }
+
+    if (data.type === 'loggedin') {
+      isRegistered = true;
+      myRole = data.role || 'user';
+      accountOverlay.classList.add('hidden');
+      accountBtn.classList.add('loggedin');
+      accountBtn.textContent = '◈ ACCOUNT ✓';
+      if (myRole !== 'guest' && myRole !== 'user') {
+        roleBadge.style.display = 'inline';
+        roleText.textContent    = myRole.toUpperCase();
+      }
+      appendMessage({ type:'system', text:`Logged in as ${data.handle} (${data.role}).`, ts: Date.now() });
+      return;
+    }
+
+    if (data.type === 'reg_err') {
+      document.getElementById('reg-err').textContent = data.text;
+      return;
+    }
+    if (data.type === 'login_err') {
+      document.getElementById('login-err').textContent = data.text;
+      return;
+    }
+
+    if (data.type === 'muted') {
+      mutedOverlay.classList.remove('hidden');
+      return;
+    }
+
+    if (data.type === 'clearhistory') {
+      feed.innerHTML = '';
+      allMessages    = [];
+      msgCount       = 0;
+      msgCountEl.textContent = '0';
       return;
     }
 
@@ -894,7 +1158,7 @@ function connect() {
 
   ws.addEventListener('close', () => {
     ledConn.className = 'led red';
-    appendMessage({ type: 'system', text: 'Connection lost — reconnecting…', ts: Date.now() });
+    appendMessage({ type:'system', text:'Connection lost — reconnecting…', ts: Date.now() });
     setTimeout(connect, reconnectDelay);
     reconnectDelay = Math.min(reconnectDelay * 1.5, 15000);
   });
@@ -905,64 +1169,81 @@ function connect() {
   });
 }
 
-// ── Bot check submit ───────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+//  BOT CHECK SUBMIT
+// ══════════════════════════════════════════════════════════
 function submitBotcheck() {
   const answer = parseInt(botcheckInput.value, 10);
-  if (isNaN(answer)) return;
-  ws.send(JSON.stringify({ type: 'botcheck', answer }));
+  if (isNaN(answer)) { botcheckErr.textContent = 'Enter a number.'; return; }
+  ws.send(JSON.stringify({ type:'botcheck', answer }));
 }
 botcheckBtn.addEventListener('click', submitBotcheck);
 botcheckInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitBotcheck(); });
 
-// ── Send message ───────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+//  RE-VERIFY SUBMIT
+// ══════════════════════════════════════════════════════════
+function submitReverify() {
+  const answer = parseInt(reverifyInput.value, 10);
+  if (isNaN(answer)) { reverifyErr.textContent = 'Enter a number.'; return; }
+  ws.send(JSON.stringify({ type:'botcheck', answer }));
+}
+reverifyBtn.addEventListener('click', submitReverify);
+reverifyInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitReverify(); });
+
+// ══════════════════════════════════════════════════════════
+//  SEND MESSAGE
+// ══════════════════════════════════════════════════════════
 function sendMsg() {
   const text = msgInput.value.trim();
   if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
-  ws.send(JSON.stringify({ type: 'msg', text }));
+  ws.send(JSON.stringify({ type:'msg', text }));
   msgInput.value = '';
 }
-
 sendBtn.addEventListener('click', sendMsg);
 msgInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMsg(); });
 
-// ── Change handle / flag ───────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+//  CHANGE HANDLE / FLAG
+// ══════════════════════════════════════════════════════════
 changeBtn.addEventListener('click', () => {
   const newHandle = handleInput.value.trim();
-  if (!newHandle) return;
-  if (!ws || ws.readyState !== WebSocket.OPEN) return;
-  ws.send(JSON.stringify({ type: 'rename', handle: newHandle, flag: myFlag }));
+  if (!newHandle || !ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type:'rename', handle: newHandle, flag: myFlag }));
   localStorage.setItem('wc_handle', newHandle);
-  localStorage.setItem('wc_flag', myFlag);
+  localStorage.setItem('wc_flag',   myFlag);
 });
 
-// ── Setup join ─────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+//  SETUP JOIN
+// ══════════════════════════════════════════════════════════
 function doJoin() {
   const h = setupHandle.value.trim();
-  if (!h) { setupHandle.focus(); return; }
+  if (!h) { setupErr.textContent = 'Enter a handle.'; setupHandle.focus(); return; }
+  if (!turnstileToken) { setupErr.textContent = 'Complete the Turnstile check above.'; return; }
   myHandle = h;
   myFlag   = setupFlag;
   localStorage.setItem('wc_handle', myHandle);
-  localStorage.setItem('wc_flag', myFlag);
-  handleInput.value = myHandle;
+  localStorage.setItem('wc_flag',   myFlag);
+  handleInput.value       = myHandle;
   flagDisplay.textContent = myFlag;
   setupOverlay.classList.add('hidden');
   connect();
 }
-
 setupJoinBtn.addEventListener('click', doJoin);
 setupHandle.addEventListener('keydown', e => { if (e.key === 'Enter') doJoin(); });
 
-// ── Init ───────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════
 const savedHandle = localStorage.getItem('wc_handle');
 const savedFlag   = localStorage.getItem('wc_flag');
-
 if (savedHandle) {
   myHandle = savedHandle;
   myFlag   = savedFlag || '🌍';
-  handleInput.value = myHandle;
+  handleInput.value       = myHandle;
   flagDisplay.textContent = myFlag;
-  setupHandle.value = myHandle;
-  // Pre-select saved flag in setup grid
+  setupHandle.value       = myHandle;
   flagGrid.querySelectorAll('.flag-btn').forEach(b => {
     b.classList.toggle('selected', b.textContent === myFlag);
   });
