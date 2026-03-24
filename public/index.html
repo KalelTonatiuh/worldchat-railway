@@ -379,8 +379,127 @@ select.search-input option { background: #0a160a; }
 #muted-overlay .panel { max-width: 340px; text-align: center; }
 #muted-overlay .panel-title { color: var(--red-err); }
 
-/* ── Reverify overlay ─────────────────────────────────────────────── */
-#reverify-overlay .panel { max-width: 340px; }
+/* ── Typing indicator ─────────────────────────────────────────────── */
+#typing-bar {
+  min-height: 20px; padding: 0 clamp(8px,2vw,16px) 3px;
+  font-family: 'VT323', monospace; font-size: clamp(12px,1.8vw,15px);
+  color: var(--phosphor-dim); font-style: italic; flex-shrink: 0;
+  letter-spacing: 0.04em; transition: opacity 0.3s;
+}
+
+/* ── Profile overlay ──────────────────────────────────────────────── */
+#profile-overlay { align-items: center; justify-content: center; }
+#profile-overlay .panel {
+  max-width: 420px; gap: 0; padding: 0; overflow: hidden;
+}
+.profile-screen-bezel {
+  background: #0a0a0a; border: 3px solid var(--brass-dark);
+  border-radius: 6px; overflow: hidden; position: relative;
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.9);
+}
+.profile-screen-bezel::before {
+  content:''; position:absolute; inset:0; z-index:2; pointer-events:none;
+  background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 3px);
+}
+.profile-screen-bezel::after {
+  content:''; position:absolute; inset:0; z-index:3; pointer-events:none;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
+}
+.profile-screen-inner {
+  background: var(--screen-bg); padding: 20px;
+  display: flex; flex-direction: column; gap: 14px; position: relative; z-index:1;
+}
+.profile-top {
+  display: flex; gap: 16px; align-items: flex-start;
+}
+.profile-avatar-wrap {
+  flex-shrink: 0; position: relative;
+}
+.profile-avatar {
+  width: 72px; height: 72px;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+  border: 2px solid var(--phosphor-lo);
+  background: #020a02; display: block;
+}
+.profile-avatar-placeholder {
+  width: 72px; height: 72px;
+  border: 2px solid var(--phosphor-lo); background: #020a02;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; line-height: 1;
+}
+.profile-avatar-edit {
+  position: absolute; bottom: 0; right: 0;
+  background: rgba(200,148,26,0.85); border: none; cursor: pointer;
+  font-size: 11px; padding: 2px 4px; color: #1a0e00; font-family: 'Special Elite', serif;
+  display: none;
+}
+.profile-avatar-wrap:hover .profile-avatar-edit { display: block; }
+#profile-avatar-input { display: none; }
+.profile-info { flex: 1; min-width: 0; }
+.profile-handle {
+  font-family: 'Special Elite', serif; font-size: clamp(16px,3vw,22px);
+  color: var(--brass-shine); letter-spacing: 0.1em;
+  text-shadow: 0 0 10px rgba(200,148,26,0.5); word-break: break-all;
+}
+.profile-flag { font-size: 22px; }
+.profile-role {
+  font-family: 'VT323', monospace; font-size: 13px;
+  color: var(--led-amber); letter-spacing: 0.1em; margin-top: 2px;
+}
+.profile-pronouns {
+  font-family: 'Courier Prime', monospace; font-size: 12px;
+  color: var(--phosphor-dim); margin-top: 4px;
+}
+.profile-bio {
+  font-family: 'VT323', monospace; font-size: clamp(14px,2.2vw,17px);
+  color: var(--phosphor); line-height: 1.4;
+  border-top: 1px solid var(--phosphor-lo); padding-top: 10px;
+  min-height: 28px; word-break: break-word;
+}
+.profile-bio.empty { color: var(--phosphor-lo); font-style: italic; }
+.profile-stats {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  border-top: 1px solid var(--phosphor-lo); padding-top: 10px;
+}
+.profile-stat {
+  font-family: 'VT323', monospace; font-size: 14px; color: var(--phosphor-dim);
+}
+.profile-stat span { color: var(--phosphor); }
+
+/* Edit mode */
+.profile-edit-section {
+  display: none; flex-direction: column; gap: 10px;
+  border-top: 1px solid var(--brass-dark); padding-top: 12px; margin-top: 4px;
+}
+.profile-edit-section.visible { display: flex; }
+.profile-edit-label {
+  font-family: 'Special Elite', serif; font-size: 11px;
+  color: var(--brass); letter-spacing: 0.08em;
+}
+.profile-edit-input {
+  background: rgba(0,0,0,0.6); border: 1px solid var(--phosphor-lo);
+  border-bottom: 2px solid var(--phosphor-dim); color: var(--phosphor);
+  font-family: 'VT323', monospace; font-size: 16px;
+  padding: 5px 8px; outline: none; width: 100%;
+}
+.profile-edit-input:focus { border-color: var(--phosphor); }
+.profile-edit-textarea {
+  background: rgba(0,0,0,0.6); border: 1px solid var(--phosphor-lo);
+  border-bottom: 2px solid var(--phosphor-dim); color: var(--phosphor);
+  font-family: 'VT323', monospace; font-size: 16px;
+  padding: 5px 8px; outline: none; width: 100%; resize: none; height: 60px;
+}
+.profile-edit-textarea:focus { border-color: var(--phosphor); }
+.profile-btn-row { display: flex; gap: 8px; }
+
+/* Profile panel chrome */
+.profile-chrome {
+  background: linear-gradient(160deg, #5a3418 0%, #2a1208 100%);
+  padding: 12px 16px; display: flex; gap: 8px; align-items: center; justify-content: flex-end;
+  border-top: 2px solid var(--brass-dark);
+}
+.profile-chrome .panel-btn { width: auto; padding: 6px 16px; font-size: 11px; }
+
 
 /* ── Unread indicator ─────────────────────────────────────────────── */
 #unread-nudge {
@@ -524,6 +643,10 @@ select.search-input option { background: #0a160a; }
     <div class="status-item">ONLINE: <span id="online-count">—</span></div>
     <div class="status-item">MSGS: <span id="msg-count">0</span></div>
     <div class="status-item" id="role-badge" style="display:none">ROLE: <span id="role-text">—</span></div>
+    <div class="status-item" id="typing-status" style="display:none">
+      <span id="typing-led" class="led off" style="width:8px;height:8px;display:inline-block;vertical-align:middle;margin-right:5px"></span>
+      <span id="typing-label" style="color:var(--phosphor-dim);font-size:clamp(11px,1.8vw,14px)"></span>
+    </div>
     <div class="status-leds">
       <div class="led off"   style="width:10px;height:10px"></div>
       <div class="led off"   style="width:10px;height:10px"></div>
@@ -640,7 +763,7 @@ select.search-input option { background: #0a160a; }
       <div class="acc-err-box" id="reg-err"></div>
       <div style="font-family:'Courier Prime',monospace;font-size:10px;color:#666;text-align:center;line-height:1.4">
         Registered users get paste privileges in chat.<br>
-        Accounts reset on server restart (in-memory only).
+        Credentials saved locally — auto-login on return.
       </div>
     </div>
     <button class="panel-btn secondary" onclick="document.getElementById('account-overlay').classList.add('hidden')">CLOSE</button>
@@ -683,6 +806,66 @@ select.search-input option { background: #0a160a; }
   <div class="expand-row">
     <button id="expand-cancel-btn">✕ CANCEL</button>
     <button id="expand-send-btn">SEND ▶▶</button>
+  </div>
+</div>
+
+<!-- ═══════════════ PROFILE OVERLAY ═══════════════ -->
+<div class="overlay hidden" id="profile-overlay">
+  <div class="panel" style="padding:0;max-width:440px;gap:0">
+    <div style="background:linear-gradient(160deg,#5a3418 0%,#2a1208 100%);padding:10px 16px;border-bottom:2px solid var(--brass-dark);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:'Special Elite',serif;font-size:13px;color:var(--brass-shine);letter-spacing:0.15em">◈ USER PROFILE ◈</div>
+      <div style="font-family:'VT323',monospace;font-size:13px;color:var(--phosphor-lo)" id="profile-channel-label">// WORLDCHAT MK-II //</div>
+    </div>
+    <div class="profile-screen-bezel" style="border-radius:0;border-left:none;border-right:none;border-bottom:none">
+      <div class="profile-screen-inner">
+        <div class="profile-top">
+          <div class="profile-avatar-wrap">
+            <canvas class="profile-avatar" id="profile-avatar-canvas" width="72" height="72"></canvas>
+            <div class="profile-avatar-placeholder" id="profile-avatar-placeholder" style="display:none"></div>
+            <button class="profile-avatar-edit" id="profile-avatar-edit-btn" title="Change avatar">📷</button>
+            <input type="file" id="profile-avatar-input" accept="image/*">
+          </div>
+          <div class="profile-info">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span class="profile-flag" id="profile-flag"></span>
+              <span class="profile-handle" id="profile-handle"></span>
+            </div>
+            <div class="profile-role" id="profile-role" style="display:none"></div>
+            <div class="profile-pronouns" id="profile-pronouns"></div>
+          </div>
+        </div>
+        <div class="profile-bio" id="profile-bio"></div>
+        <div class="profile-stats">
+          <div class="profile-stat">MSGS: <span id="profile-msgcount">—</span></div>
+          <div class="profile-stat">JOINED: <span id="profile-joined">—</span></div>
+        </div>
+        <!-- Edit section (own profile only) -->
+        <div class="profile-edit-section" id="profile-edit-section">
+          <div style="font-family:'VT323',monospace;font-size:13px;color:var(--phosphor-dim);letter-spacing:0.08em">// EDIT PROFILE //</div>
+          <div>
+            <div class="profile-edit-label">PRONOUNS</div>
+            <input class="profile-edit-input" id="profile-edit-pronouns" maxlength="30" placeholder="e.g. they/them" autocomplete="off">
+          </div>
+          <div>
+            <div class="profile-edit-label">BIO</div>
+            <textarea class="profile-edit-textarea" id="profile-edit-bio" maxlength="160" placeholder="say something about yourself…"></textarea>
+          </div>
+          <div>
+            <div class="profile-edit-label">AVATAR URL <span style="color:var(--phosphor-lo);font-size:10px">(auto bitcrushed)</span></div>
+            <div style="display:flex;gap:6px">
+              <input class="profile-edit-input" id="profile-edit-url" style="flex:1" placeholder="https://…" autocomplete="off" type="url">
+              <button class="panel-btn" id="profile-url-load-btn" style="width:auto;padding:4px 10px;font-size:11px;flex-shrink:0">LOAD</button>
+            </div>
+          </div>
+          <div class="profile-btn-row">
+            <button class="panel-btn" id="profile-save-btn" style="flex:1;font-size:12px;padding:8px">▶ SAVE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="profile-chrome">
+      <button class="panel-btn secondary" id="profile-close-btn">CLOSE</button>
+    </div>
   </div>
 </div>
 
@@ -731,6 +914,10 @@ let setupFlag      = '🌍';
 let turnstileToken = null;
 let pendingLinkUrl = null;
 let ctxTargetHandle= null;
+let myProfile      = { bio:'', pronouns:'', avatar: null };
+let profileCache   = {};           // handle → { bio, pronouns, avatar, flag, role, msgCount, joined }
+let typingTimers   = {};           // handle → timeout id
+let myTypingTimer  = null;
 
 // ══════════════════════════════════════════════════════════
 //  DOM REFS
@@ -1106,6 +1293,14 @@ function appendMessage(data) {
     allMessages.push({ el: line, ts: data.ts, flag: data.flag, text: data.text, handle: data.handle });
     msgCount++;
     msgCountEl.textContent = msgCount;
+    // Cache flag for profile
+    if (data.handle) {
+      if (!profileCache[data.handle]) profileCache[data.handle] = {};
+      profileCache[data.handle].flag     = data.flag;
+      profileCache[data.handle].role     = data.role || 'user';
+      profileCache[data.handle].msgCount = (profileCache[data.handle].msgCount || 0) + 1;
+      if (!profileCache[data.handle].joined) profileCache[data.handle].joined = data.ts;
+    }
   } else if (data.type === 'system') {
     line.classList.add('system');
     line.textContent = `— ${data.text} —`;
@@ -1136,11 +1331,25 @@ function connect() {
   ws.addEventListener('open', () => {
     reconnectDelay = 1500;
     ledConn.className = 'led green';
-    // Send Turnstile token first, then join
     if (turnstileToken) {
       ws.send(JSON.stringify({ type:'turnstile', token: turnstileToken }));
     }
     ws.send(JSON.stringify({ type:'join', handle: myHandle, flag: myFlag }));
+    // Send stored profile
+    if (myProfile.bio || myProfile.pronouns || myProfile.avatar) {
+      ws.send(JSON.stringify({ type:'profile_update', bio: myProfile.bio, pronouns: myProfile.pronouns, avatar: myProfile.avatar }));
+    }
+    // Auto-login if saved account exists
+    try {
+      const acc = JSON.parse(localStorage.getItem('wc_account') || 'null');
+      if (acc && acc.handle && acc.password) {
+        setTimeout(() => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type:'login', handle: acc.handle, password: acc.password }));
+          }
+        }, 400);
+      }
+    } catch {}
   });
 
   ws.addEventListener('message', e => {
@@ -1204,6 +1413,10 @@ function connect() {
 
     if (data.type === 'registered') {
       isRegistered = true;
+      // Save credentials to localStorage
+      const rh = document.getElementById('reg-handle').value.trim();
+      const rp = document.getElementById('reg-pw').value.trim();
+      if (rh && rp) localStorage.setItem('wc_account', JSON.stringify({ handle: rh, password: rp }));
       accountOverlay.classList.add('hidden');
       accountBtn.classList.add('loggedin');
       accountBtn.textContent = '◈ ACCOUNT ✓';
@@ -1215,6 +1428,10 @@ function connect() {
     if (data.type === 'loggedin') {
       isRegistered = true;
       myRole = data.role || 'user';
+      // Save credentials to localStorage
+      const lh = document.getElementById('login-handle').value.trim();
+      const lp = document.getElementById('login-pw').value.trim();
+      if (lh && lp) localStorage.setItem('wc_account', JSON.stringify({ handle: lh, password: lp }));
       accountOverlay.classList.add('hidden');
       accountBtn.classList.add('loggedin');
       accountBtn.textContent = '◈ ACCOUNT ✓';
@@ -1248,6 +1465,28 @@ function connect() {
       msgCountEl.textContent = '0';
       return;
     }
+
+    if (data.type === 'typing') {
+      setTyping(data.handle);
+      return;
+    }
+
+    if (data.type === 'profile_update') {
+      // Another user updated their profile — cache it
+      profileCache[data.handle] = Object.assign(profileCache[data.handle] || {}, {
+        bio: data.bio, pronouns: data.pronouns, avatar: data.avatar
+      });
+      return;
+    }
+
+    if (data.type === 'profile_data') {
+      // Server sent profile data for a handle we requested
+      profileCache[data.handle] = data;
+      return;
+    }
+
+    // Clear typing indicator when a message arrives from that user
+    if (data.type === 'msg' && data.handle) clearTyping(data.handle);
 
     appendMessage(data);
     if (data.type === 'msg') bumpUnread();
@@ -1455,6 +1694,257 @@ document.addEventListener('wc:reg_err',   e => showAccErr('reg-err',   e.detail,
 document.addEventListener('wc:login_err', e => showAccErr('login-err', e.detail, 'error'));
 document.addEventListener('wc:registered',e => showAccErr('reg-err',   '✓ Registered!', 'ok'));
 document.addEventListener('wc:loggedin',  e => showAccErr('login-err', '✓ Logged in!',  'ok'));
+
+// ══════════════════════════════════════════════════════════
+//  TYPING INDICATOR (LED style)
+// ══════════════════════════════════════════════════════════
+const typingStatus = document.getElementById('typing-status');
+const typingLed    = document.getElementById('typing-led');
+const typingLabel  = document.getElementById('typing-label');
+
+function updateTypingBar() {
+  const names = Object.keys(typingTimers);
+  if (!names.length) {
+    typingStatus.style.display = 'none';
+    typingLed.className = 'led off';
+    typingLed.style.cssText = 'width:8px;height:8px;display:inline-block;vertical-align:middle;margin-right:5px';
+    return;
+  }
+  typingStatus.style.display = '';
+  typingLed.className = 'led amber';
+  typingLed.style.cssText = 'width:8px;height:8px;display:inline-block;vertical-align:middle;margin-right:5px';
+  if (names.length === 1) typingLabel.textContent = `${names[0]} typing…`;
+  else if (names.length === 2) typingLabel.textContent = `${names[0]} + ${names[1]} typing…`;
+  else typingLabel.textContent = `${names.length} typing…`;
+}
+
+function setTyping(handle) {
+  if (handle === myHandle) return;
+  if (typingTimers[handle]) clearTimeout(typingTimers[handle]);
+  typingTimers[handle] = setTimeout(() => {
+    delete typingTimers[handle];
+    updateTypingBar();
+  }, 3000);
+  updateTypingBar();
+}
+
+function clearTyping(handle) {
+  if (typingTimers[handle]) { clearTimeout(typingTimers[handle]); delete typingTimers[handle]; }
+  updateTypingBar();
+}
+
+// Send typing event (debounced)
+msgInput.addEventListener('input', () => {
+  if (!ws || ws.readyState !== WebSocket.OPEN || !msgInput.value.trim()) return;
+  if (myTypingTimer) return; // already sent recently
+  ws.send(JSON.stringify({ type: 'typing' }));
+  myTypingTimer = setTimeout(() => { myTypingTimer = null; }, 2000);
+});
+
+// ══════════════════════════════════════════════════════════
+//  BITCRUSH AVATAR
+// ══════════════════════════════════════════════════════════
+function bitcrushImage(file, callback) {
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    const CRUSH = 24; // output pixel size
+    const offscreen = document.createElement('canvas');
+    offscreen.width  = CRUSH;
+    offscreen.height = CRUSH;
+    const octx = offscreen.getContext('2d');
+
+    // Step 1: draw tiny
+    octx.drawImage(img, 0, 0, CRUSH, CRUSH);
+
+    // Step 2: quantize to limited palette (phosphor green palette)
+    const id = octx.getImageData(0, 0, CRUSH, CRUSH);
+    const d  = id.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const gray = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+      // Map to 4-level phosphor green
+      const level = Math.floor(gray / 64);
+      const palG  = [13, 26, 128, 255][level];
+      const palR  = [0,  10, 60,  100][level];
+      const palB  = [6,  15, 40,  80 ][level];
+      d[i]   = palR;
+      d[i+1] = palG;
+      d[i+2] = palB;
+    }
+    octx.putImageData(id, 0, 0);
+
+    URL.revokeObjectURL(url);
+    callback(offscreen.toDataURL('image/png'));
+  };
+  img.src = url;
+}
+
+function drawAvatarOnCanvas(canvas, dataUrl) {
+  if (!dataUrl) { clearAvatarCanvas(canvas); return; }
+  const img = new Image();
+  img.onload = () => {
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, 72, 72);
+    ctx.drawImage(img, 0, 0, 72, 72);
+  };
+  img.src = dataUrl;
+}
+
+function clearAvatarCanvas(canvas) {
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#020a02';
+  ctx.fillRect(0, 0, 72, 72);
+}
+
+// ══════════════════════════════════════════════════════════
+//  PROFILE OVERLAY
+// ══════════════════════════════════════════════════════════
+const profileOverlay     = document.getElementById('profile-overlay');
+const profileHandle      = document.getElementById('profile-handle');
+const profileFlag        = document.getElementById('profile-flag');
+const profileRole        = document.getElementById('profile-role');
+const profilePronouns    = document.getElementById('profile-pronouns');
+const profileBio         = document.getElementById('profile-bio');
+const profileMsgCount    = document.getElementById('profile-msgcount');
+const profileJoined      = document.getElementById('profile-joined');
+const profileEditSection = document.getElementById('profile-edit-section');
+const profileEditPronouns= document.getElementById('profile-edit-pronouns');
+const profileEditBio     = document.getElementById('profile-edit-bio');
+const profileSaveBtn     = document.getElementById('profile-save-btn');
+const profileCloseBtn    = document.getElementById('profile-close-btn');
+const profileAvatarCanvas= document.getElementById('profile-avatar-canvas');
+const profileAvatarEditBtn=document.getElementById('profile-avatar-edit-btn');
+const profileAvatarInput = document.getElementById('profile-avatar-input');
+
+function openProfile(handle) {
+  const isOwn  = handle === myHandle;
+  const cached = profileCache[handle] || {};
+
+  profileHandle.textContent   = handle;
+  profileFlag.textContent     = cached.flag || (isOwn ? myFlag : '🌍');
+  profilePronouns.textContent = cached.pronouns || (isOwn ? myProfile.pronouns : '');
+
+  const bioText = cached.bio || (isOwn ? myProfile.bio : '');
+  profileBio.textContent  = bioText || (isOwn ? 'No bio yet — add one below.' : 'No bio.');
+  profileBio.className    = 'profile-bio' + (!bioText ? ' empty' : '');
+
+  profileMsgCount.textContent = cached.msgCount ?? '—';
+  profileJoined.textContent   = cached.joined   ? new Date(cached.joined).toLocaleDateString() : '—';
+
+  if (cached.role && cached.role !== 'guest' && cached.role !== 'user') {
+    profileRole.textContent = '[ ' + cached.role.toUpperCase() + ' ]';
+    profileRole.style.display = 'block';
+  } else {
+    profileRole.style.display = 'none';
+  }
+
+  // Avatar
+  const avatarData = isOwn ? myProfile.avatar : (cached.avatar || null);
+  clearAvatarCanvas(profileAvatarCanvas);
+  if (avatarData) drawAvatarOnCanvas(profileAvatarCanvas, avatarData);
+
+  // Edit section
+  profileEditSection.classList.toggle('visible', isOwn);
+  profileAvatarEditBtn.style.display = isOwn ? '' : 'none';
+  if (isOwn) {
+    profileEditPronouns.value = myProfile.pronouns || '';
+    profileEditBio.value      = myProfile.bio      || '';
+  }
+
+  profileOverlay.classList.remove('hidden');
+}
+
+profileCloseBtn.addEventListener('click', () => profileOverlay.classList.add('hidden'));
+profileOverlay.addEventListener('click', e => { if (e.target === profileOverlay) profileOverlay.classList.add('hidden'); });
+
+profileSaveBtn.addEventListener('click', () => {
+  myProfile.pronouns = profileEditPronouns.value.trim().slice(0, 30);
+  myProfile.bio      = profileEditBio.value.trim().slice(0, 160);
+  // Update display immediately
+  profilePronouns.textContent = myProfile.pronouns;
+  profileBio.textContent      = myProfile.bio || 'No bio yet — add one below.';
+  profileBio.className        = 'profile-bio' + (!myProfile.bio ? ' empty' : '');
+  // Save locally
+  localStorage.setItem('wc_profile', JSON.stringify(myProfile));
+  // Broadcast to server
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type:'profile_update', bio: myProfile.bio, pronouns: myProfile.pronouns, avatar: myProfile.avatar }));
+  }
+  profileSaveBtn.textContent = '✓ SAVED';
+  setTimeout(() => { profileSaveBtn.textContent = '▶ SAVE'; }, 1500);
+});
+
+// Avatar upload
+profileAvatarEditBtn.addEventListener('click', () => profileAvatarInput.click());
+profileAvatarInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  bitcrushImage(file, (dataUrl) => {
+    myProfile.avatar = dataUrl;
+    drawAvatarOnCanvas(profileAvatarCanvas, dataUrl);
+    localStorage.setItem('wc_profile', JSON.stringify(myProfile));
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type:'profile_update', bio: myProfile.bio, pronouns: myProfile.pronouns, avatar: myProfile.avatar }));
+    }
+  });
+  profileAvatarInput.value = '';
+});
+
+// Avatar URL loader
+document.getElementById('profile-url-load-btn').addEventListener('click', () => {
+  const url = document.getElementById('profile-edit-url').value.trim();
+  if (!url) return;
+  const btn = document.getElementById('profile-url-load-btn');
+  btn.textContent = '…';
+  btn.disabled = true;
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    // Draw to offscreen canvas then bitcrush
+    const off = document.createElement('canvas');
+    off.width = off.height = 256;
+    const octx = off.getContext('2d');
+    octx.drawImage(img, 0, 0, 256, 256);
+    // Convert to blob then bitcrush
+    off.toBlob(blob => {
+      bitcrushImage(blob, (dataUrl) => {
+        myProfile.avatar = dataUrl;
+        drawAvatarOnCanvas(profileAvatarCanvas, dataUrl);
+        localStorage.setItem('wc_profile', JSON.stringify(myProfile));
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type:'profile_update', bio: myProfile.bio, pronouns: myProfile.pronouns, avatar: myProfile.avatar }));
+        }
+        btn.textContent = '✓';
+        btn.disabled = false;
+        setTimeout(() => { btn.textContent = 'LOAD'; }, 1500);
+      });
+    });
+  };
+  img.onerror = () => {
+    btn.textContent = 'ERR';
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = 'LOAD'; }, 1500);
+  };
+  img.src = url;
+});
+
+// Click on handle in feed → open profile
+feed.addEventListener('click', e => {
+  if (e.target.closest('a')) return; // let link handler take it
+  const line = e.target.closest('.msg-line[data-handle]');
+  if (!line) return;
+  const handle = line.dataset.handle;
+  if (handle) openProfile(handle);
+});
+
+// ══════════════════════════════════════════════════════════
+//  LOAD SAVED PROFILE
+// ══════════════════════════════════════════════════════════
+try {
+  const saved = JSON.parse(localStorage.getItem('wc_profile') || '{}');
+  if (saved) myProfile = Object.assign({ bio:'', pronouns:'', avatar: null }, saved);
+} catch {}
 </script>
 </body>
 </html>
