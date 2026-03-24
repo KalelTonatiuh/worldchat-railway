@@ -407,10 +407,14 @@ wss.on('connection', (ws, req) => {
       if (containsLink(text)) {
         send(ws, { type:'error', text:'⚠ Links are not allowed in this channel.' }); return;
       }
+      // Accept optional lang tag (2-3 lowercase letters, client-detected)
+      const lang = (typeof data.lang === 'string' && /^[a-z]{2,3}$/.test(data.lang))
+        ? data.lang.toUpperCase()
+        : null;
       ws._msgTimes.push(now); ws._lastMsgAt = now;
       const msg = {
         type: 'msg', handle: sanitize(ws._handle), flag: ws._flag,
-        text, ts: now, id: simpleHash(ws._handle + now + text)
+        text, lang, ts: now, id: simpleHash(ws._handle + now + text)
       };
       pushHistory(msg);
       const s = JSON.stringify(msg);

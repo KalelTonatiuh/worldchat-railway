@@ -263,6 +263,152 @@ select.search-input option { background: #0a160a; }
 }
 .ts:hover::after { opacity: 1; }
 
+/* ── @Mention highlights ──────────────────────────────────── */
+.mention-self {
+  color: var(--amber-hi);
+  font-weight: bold;
+  text-shadow: 0 0 6px var(--amber);
+}
+.mention-other {
+  color: var(--phosphor);
+  opacity: 0.88;
+}
+.msg-line.mentioned {
+  background: rgba(255,221,68,0.07);
+  border-left: 2px solid var(--amber);
+  padding-left: 6px;
+  animation: mentionFlash 0.6s ease-out;
+}
+@keyframes mentionFlash {
+  0%   { background: rgba(255,221,68,0.28); }
+  100% { background: rgba(255,221,68,0.07); }
+}
+
+/* ── Quote lines (BBS-style replies) ─────────────────────── */
+.msg-text .quote-line {
+  display: block;
+  color: var(--phosphor-dim);
+  font-style: italic;
+  border-left: 2px solid var(--phosphor-lo);
+  padding-left: 6px;
+  margin-bottom: 2px;
+  opacity: 0.72;
+  font-size: 0.9em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* ── Reply banner ─────────────────────────────────────────── */
+#reply-banner {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(78,255,145,0.05);
+  border-left: 2px solid var(--phosphor-dim);
+  padding: 3px 8px;
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  color: var(--phosphor-dim);
+  font-style: italic;
+  flex-shrink: 0;
+}
+#reply-banner.visible { display: flex; }
+#reply-banner-cancel {
+  background: none; border: none;
+  color: var(--phosphor-dim); cursor: pointer;
+  font-size: 13px; padding: 0 4px; line-height: 1;
+  flex-shrink: 0;
+}
+#reply-banner-cancel:hover { color: var(--phosphor); }
+/* Add reply item to context menu */
+.ctx-item.reply { color: var(--phosphor); }
+
+/* ── Language badge ───────────────────────────────────────── */
+.lang-badge {
+  display: inline-block;
+  font-size: 0.72em;
+  color: var(--phosphor-lo);
+  font-family: 'VT323', monospace;
+  letter-spacing: 0.03em;
+  margin-left: 5px;
+  vertical-align: middle;
+  opacity: 0.55;
+  user-select: none;
+}
+.msg-line:hover .lang-badge { opacity: 0.9; }
+
+/* ── World map overlay ────────────────────────────────────── */
+#map-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.88);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+#map-overlay.open { display: flex; }
+#map-panel {
+  background: var(--screen-bg);
+  border: 2px solid var(--phosphor-dim);
+  box-shadow: 0 0 40px rgba(78,255,145,0.12), inset 0 0 20px rgba(0,0,0,0.6);
+  padding: 14px;
+  max-width: 740px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'VT323', monospace;
+  color: var(--phosphor);
+  font-size: clamp(14px,2.5vw,18px);
+  letter-spacing: 0.1em;
+}
+#map-close-btn {
+  background: none;
+  border: 1px solid var(--phosphor-dim);
+  color: var(--phosphor);
+  cursor: pointer;
+  font-family: 'VT323', monospace;
+  font-size: 15px;
+  padding: 2px 8px;
+  transition: border-color 0.15s;
+}
+#map-close-btn:hover { border-color: var(--phosphor); }
+#map-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--phosphor-lo);
+}
+#map-legend {
+  font-family: 'VT323', monospace;
+  color: var(--phosphor-dim);
+  font-size: 13px;
+  text-align: center;
+  letter-spacing: 0.06em;
+}
+/* Globe button in statusbar */
+#map-btn {
+  background: transparent;
+  border: 1px solid var(--phosphor-lo);
+  color: var(--phosphor-dim);
+  cursor: pointer;
+  font-family: 'VT323', monospace;
+  font-size: clamp(12px,2vw,16px);
+  padding: 1px clamp(6px,1.2vw,10px);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+#map-btn:hover { border-color: var(--phosphor); color: var(--phosphor); }
+
 /* ── Who's online panel ───────────────────────────────────── */
 #online-count {
   cursor: pointer; text-decoration: underline dotted;
@@ -774,9 +920,13 @@ select.search-input option { background: #0a160a; }
       <button id="search-toggle-btn" title="Toggle search">🔍</button>
       <button id="account-btn" title="Account">◈ ACCOUNT</button>
     </div>
-    <div class="control-row">
-      <input class="ctrl-input" id="msg-input" type="text" maxlength="400"
-        placeholder="type your message… enter to send" autocomplete="off" spellcheck="false" style="flex:1">
+  <div id="reply-banner">
+    <span id="reply-banner-text"></span>
+    <button id="reply-banner-cancel" title="Cancel reply">✕</button>
+  </div>
+  <div class="control-row">
+    <input class="ctrl-input" id="msg-input" type="text" maxlength="400"
+      placeholder="type your message… enter to send" autocomplete="off" spellcheck="false" style="flex:1">
       <button id="expand-btn" title="Expand input">⤢</button>
       <button id="send-btn">SEND ▶▶</button>
     </div>
@@ -792,6 +942,7 @@ select.search-input option { background: #0a160a; }
     <div class="status-item">MSGS: <span id="msg-count">0</span></div>
     <div class="status-item" id="role-badge" style="display:none">ROLE: <span id="role-text">—</span></div>
     <button id="sound-toggle-btn" class="status-item" title="Toggle sounds" style="cursor:pointer;border-color:var(--phosphor-lo);background:transparent;font-family:'VT323',monospace;font-size:clamp(12px,2vw,16px);color:var(--phosphor-dim);letter-spacing:0.06em">🔇 SFX</button>
+    <button id="map-btn" title="World map — see where everyone is from" onclick="openWorldMap()">🌍 MAP</button>
     <div class="status-item" id="typing-status" style="display:none">
       <span id="typing-led" class="led off" style="width:8px;height:8px;display:inline-block;vertical-align:middle;margin-right:5px"></span>
       <span id="typing-avatars"></span>
@@ -1027,12 +1178,25 @@ select.search-input option { background: #0a160a; }
 
 <!-- ═══════════════ CONTEXT MENU ═══════════════ -->
 <div id="ctx-menu">
+  <div class="ctx-item reply"      id="ctx-reply">↩ Reply</div>
   <div class="ctx-item" id="ctx-vote">🗳 Vote to mute</div>
   <div class="ctx-item safe"       id="ctx-unmute"   style="display:none">🔓 Unmute (mod)</div>
   <div class="ctx-item danger"     id="ctx-kick"     style="display:none">⚡ Mute 1h (mod)</div>
   <div class="ctx-item owner-only" id="ctx-promote"  style="display:none">⬆ Promote to mod</div>
   <div class="ctx-item owner-only" id="ctx-demote"   style="display:none">⬇ Demote mod</div>
   <div class="ctx-item danger"     id="ctx-ban"      style="display:none">🚫 Ban (owner)</div>
+</div>
+
+<!-- ═══════════════ WORLD MAP OVERLAY ═══════════════ -->
+<div id="map-overlay">
+  <div id="map-panel">
+    <div id="map-header">
+      <span>// GLOBAL PRESENCE //</span>
+      <button id="map-close-btn" onclick="closeWorldMap()">✕ CLOSE</button>
+    </div>
+    <canvas id="map-canvas" width="700" height="360"></canvas>
+    <div id="map-legend"></div>
+  </div>
 </div>
 
 <script>
@@ -1077,6 +1241,7 @@ let myProfile      = { bio:'', pronouns:'', avatar: null };
 let profileCache   = {};           // handle → { bio, pronouns, avatar, flag, role, msgCount, joined }
 let typingTimers   = {};           // handle → timeout id
 let myTypingTimer  = null;
+let replyingTo     = null;         // { handle, text } | null — active reply quote
 
 // ══════════════════════════════════════════════════════════
 //  DOM REFS
@@ -1123,6 +1288,7 @@ const linkCancelBtn  = document.getElementById('link-cancel-btn');
 const linkProceedBtn = document.getElementById('link-proceed-btn');
 const mutedOverlay   = document.getElementById('muted-overlay');
 const ctxMenu        = document.getElementById('ctx-menu');
+const ctxReply       = document.getElementById('ctx-reply');
 const ctxVote        = document.getElementById('ctx-vote');
 const ctxUnmute      = document.getElementById('ctx-unmute');
 const ctxKick        = document.getElementById('ctx-kick');
@@ -1297,8 +1463,11 @@ document.addEventListener('contextmenu', (e) => {
   if (!line) { ctxMenu.style.display = 'none'; return; }
   e.preventDefault();
   const target = line.dataset.handle;
-  if (!target || target === myHandle) return;
+  if (!target) return;
   ctxTargetHandle = target;
+  // Store msg text for reply
+  ctxMenu._replyHandle = target;
+  ctxMenu._replyText   = line.querySelector('.msg-text') ? line.querySelector('.msg-text').textContent : '';
 
   const isMod   = myRole === 'mod' || myRole === 'owner';
   const isOwner = myRole === 'owner';
@@ -1321,6 +1490,9 @@ document.addEventListener('contextmenu', (e) => {
 });
 document.addEventListener('click', () => { ctxMenu.style.display = 'none'; });
 
+ctxReply.addEventListener('click', () => {
+  if (ctxMenu._replyHandle) startReply(ctxMenu._replyHandle, ctxMenu._replyText || '…');
+});
 ctxVote.addEventListener('click', () => {
   if (!ctxTargetHandle || !ws) return;
   ws.send(JSON.stringify({ type:'votekick', target: ctxTargetHandle }));
@@ -1438,6 +1610,49 @@ document.getElementById('reg-pw').addEventListener('keydown', e => {
 });
 
 // ══════════════════════════════════════════════════════════
+//  MENTION + QUOTE HELPERS
+// ══════════════════════════════════════════════════════════
+
+// Parse text into DOM nodes, wrapping @mentions in styled spans.
+// XSS-safe: uses textContent throughout.
+function parseMentions(text, handle) {
+  const parts = text.split(/(@[\w\-]+)/g);
+  return parts.map(part => {
+    if (/^@[\w\-]+$/.test(part)) {
+      const span = document.createElement('span');
+      const mentioned = part.slice(1).toLowerCase();
+      span.className = (handle && mentioned === handle.toLowerCase())
+        ? 'mention-self'
+        : 'mention-other';
+      span.textContent = part;
+      return span;
+    }
+    return document.createTextNode(part);
+  });
+}
+
+function isMentioned(text, handle) {
+  if (!handle) return false;
+  return new RegExp('@' + handle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(text);
+}
+
+// Render message text with quote lines and @mention highlighting into container el.
+function renderMsgText(container, text, handle) {
+  const lines = text.split('\n');
+  lines.forEach((line, i) => {
+    if (line.startsWith('>')) {
+      const span = document.createElement('span');
+      span.className = 'quote-line';
+      span.textContent = line;
+      container.appendChild(span);
+    } else {
+      parseMentions(line, handle).forEach(n => container.appendChild(n));
+      if (i < lines.length - 1) container.appendChild(document.createTextNode('\n'));
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════
 //  MESSAGE HELPERS
 // ══════════════════════════════════════════════════════════
 function formatTime(ts) {
@@ -1455,7 +1670,8 @@ function ledTx() {
   setTimeout(() => el.style.opacity = '0.6', 120);
 }
 
-function appendMessage(data) {
+function appendMessage(data, opts) {
+  const isHistory = (opts && opts.isHistory) || false;
   const line = document.createElement('div');
   line.className = 'msg-line';
 
@@ -1466,7 +1682,6 @@ function appendMessage(data) {
     const ts = document.createElement('span');
     ts.className = 'ts';
     ts.textContent = `[${formatTime(data.ts)}]`;
-    // Full timestamp tooltip
     const fullDate = new Date(data.ts);
     ts.dataset.full = fullDate.toUTCString().replace(' GMT', ' UTC');
 
@@ -1474,14 +1689,34 @@ function appendMessage(data) {
     handleSpan.className = 'handle';
     handleSpan.textContent = data.handle + ':';
 
+    // Language badge
+    if (data.lang) {
+      const badge = document.createElement('span');
+      badge.className = 'lang-badge';
+      badge.textContent = `[${data.lang}]`;
+      badge.title = `Language: ${data.lang}`;
+      handleSpan.appendChild(badge);
+    }
+
     const textSpan = document.createElement('span');
-    textSpan.textContent = data.text;
+    textSpan.className = 'msg-text';
+    renderMsgText(textSpan, data.text, myHandle);
 
     line.appendChild(ts);
     line.appendChild(document.createTextNode(' ' + data.flag + ' '));
     line.appendChild(handleSpan);
     line.appendChild(document.createTextNode(' '));
     line.appendChild(textSpan);
+
+    // @mention detection — highlight row, ping sound (not on history replay)
+    if (isMentioned(data.text, myHandle) && data.handle !== myHandle) {
+      line.classList.add('mentioned');
+      if (!isHistory && soundEnabled) SFX.mention();
+      if (!isHistory) {
+        feed.style.borderColor = 'var(--amber)';
+        setTimeout(() => { feed.style.borderColor = ''; }, 800);
+      }
+    }
 
     // ── Reaction tray ──────────────────────────────────────
     const msgId = data.id || (data.handle + data.ts);
@@ -1506,7 +1741,6 @@ function appendMessage(data) {
     allMessages.push({ el: line, ts: data.ts, flag: data.flag, text: data.text, handle: data.handle });
     msgCount++;
     msgCountEl.textContent = msgCount;
-    // Cache flag for profile
     if (data.handle) {
       if (!profileCache[data.handle]) profileCache[data.handle] = {};
       profileCache[data.handle].flag     = data.flag;
@@ -1515,14 +1749,12 @@ function appendMessage(data) {
       if (!profileCache[data.handle].joined) profileCache[data.handle].joined = data.ts;
     }
 
-    // Sound
     if (data.own) SFX.send(); else SFX.tick();
 
   } else if (data.type === 'system') {
     line.classList.add('system');
     line.textContent = `— ${data.text} —`;
     if (data.ts) allMessages.push({ el: line, ts: data.ts, flag:'', text: data.text, handle:'' });
-    // Play join/leave sounds for system messages
     const t = data.text || '';
     if (t.includes('joined the channel')) SFX.join();
     else if (t.includes('left the channel')) SFX.leave();
@@ -1620,6 +1852,11 @@ const SFX = {
   // Short blip — reaction
   react() {
     playTone(1047, 'sine', 0.06, 0.07, 0.003, 0.06);
+  },
+  // Double-beep — @mention alert
+  mention() {
+    playTone(880,  'square', 0.07, 0.16, 0.002, 0.07);
+    setTimeout(() => playTone(1100, 'square', 0.07, 0.12, 0.002, 0.07), 110);
   },
 };
 
@@ -1811,7 +2048,7 @@ function connect() {
     }
 
     if (data.type === 'history') {
-      data.messages.forEach(m => appendMessage(m));
+      data.messages.forEach(m => appendMessage(m, { isHistory: true }));
       return;
     }
 
@@ -2111,7 +2348,77 @@ function updateCmdHint(val) {
   cmdHint.classList.add('visible');
 }
 
-msgInput.addEventListener('input', () => { updateCmdHint(msgInput.value); });
+// ══════════════════════════════════════════════════════════
+//  LANGUAGE DETECTION
+// ══════════════════════════════════════════════════════════
+function detectLang(text) {
+  if (!text || text.trim().length < 8) return null;
+  const t = text.toLowerCase();
+  // Script-based (high confidence)
+  if (/[\u4E00-\u9FFF]/.test(text)) return 'zh';
+  if (/[\u3040-\u30FF]/.test(text)) return 'ja';
+  if (/[\uAC00-\uD7AF]/.test(text)) return 'ko';
+  if (/[\u0600-\u06FF]/.test(text)) return 'ar';
+  if (/[\u0400-\u04FF]/.test(text)) return 'ru';
+  if (/[\u0900-\u097F]/.test(text)) return 'hi';
+  if (/[\u0E00-\u0E7F]/.test(text)) return 'th';
+  // Latin stopword matching
+  const words = t.split(/\W+/).filter(Boolean);
+  if (words.length < 2) return null;
+  const sw = {
+    en: ['the','and','is','in','it','of','to','that','was','for','on','are','with','they','at','be','this','have','from','or','had','by','but','not','what','all','were','we','when','your','can'],
+    es: ['que','de','en','el','la','los','las','un','una','por','con','para','su','se','del','al','es','no','lo','más','pero','como','sus','ya','muy','sobre','también'],
+    pt: ['que','de','em','o','a','os','as','um','uma','por','com','para','seu','sua','do','da','ao','não','na','no','se','mais','como','mas','foi','ele','ela'],
+    fr: ['le','la','les','de','du','des','un','une','et','en','que','qui','est','je','tu','il','nous','vous','par','sur','avec','pour','pas','ce','dans','au','mais'],
+    de: ['der','die','das','und','in','von','zu','den','mit','dem','des','nicht','ein','eine','auf','ist','war','sie','was','ich','er','auch','an','als','am','für'],
+    it: ['il','la','i','le','di','che','un','una','in','del','lo','con','per','non','si','su','gli','ma','come','una','poi','anche','più'],
+    nl: ['de','het','een','van','in','en','is','dat','op','zijn','aan','te','ook','was','bij','kan','maar','om','als','er'],
+    tr: ['bir','bu','ve','de','da','için','ile','ben','sen','biz','var','yok','ne','ki','mi','bu'],
+    id: ['yang','dan','di','ini','itu','tidak','dengan','ke','dari','ada','untuk','pada','saya','anda','kita'],
+  };
+  const scores = {};
+  for (const [lang, list] of Object.entries(sw)) {
+    scores[lang] = words.filter(w => list.includes(w)).length;
+  }
+  const best = Object.entries(scores).sort((a,b) => b[1]-a[1])[0];
+  if (best[1] < 2) return null;
+  if (best[0] === 'en') return null; // English is default — no badge
+  return best[0];
+}
+
+// ══════════════════════════════════════════════════════════
+//  REPLY SYSTEM
+// ══════════════════════════════════════════════════════════
+const replyBanner     = document.getElementById('reply-banner');
+const replyBannerText = document.getElementById('reply-banner-text');
+const replyBannerCancel = document.getElementById('reply-banner-cancel');
+
+function startReply(handle, text) {
+  replyingTo = { handle, text };
+  const excerpt = text.replace(/\n/g, ' ').slice(0, 60);
+  const ellipsis = text.length > 60 ? '…' : '';
+  const prefix = `>${handle}: ${excerpt}${ellipsis}\n`;
+  msgInput.value = prefix;
+  msgInput.focus();
+  msgInput.setSelectionRange(msgInput.value.length, msgInput.value.length);
+  replyBannerText.textContent = `↩ replying to ${handle}`;
+  replyBanner.classList.add('visible');
+  updateCmdHint(msgInput.value);
+}
+
+function cancelReply() {
+  replyingTo = null;
+  replyBanner.classList.remove('visible');
+  if (msgInput.value.startsWith('>')) msgInput.value = '';
+}
+
+replyBannerCancel.addEventListener('click', cancelReply);
+
+// Auto-cancel if user backspaces past the quote prefix
+msgInput.addEventListener('input', () => {
+  if (replyingTo && !msgInput.value.startsWith('>')) cancelReply();
+  updateCmdHint(msgInput.value);
+});
 
 // ══════════════════════════════════════════════════════════
 //  SEND MESSAGE
@@ -2126,9 +2433,12 @@ function sendMsg() {
     return;
   }
   if (!ws || ws.readyState !== WebSocket.OPEN) return;
-  ws.send(JSON.stringify({ type:'msg', text }));
+  const lang = detectLang(text);
+  ws.send(JSON.stringify({ type:'msg', text, lang }));
   msgInput.value = '';
   cmdHint.classList.remove('visible');
+  replyingTo = null;
+  replyBanner.classList.remove('visible');
 }
 sendBtn.addEventListener('click', sendMsg);
 msgInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMsg(); });
@@ -2545,6 +2855,148 @@ feed.addEventListener('click', e => {
   if (!line) return;
   const handle = line.dataset.handle;
   if (handle) openProfile(handle);
+});
+
+// ══════════════════════════════════════════════════════════
+//  WORLD MAP HEATMAP
+// ══════════════════════════════════════════════════════════
+
+// Flag emoji → ISO-2 country code via regional indicator codepoints
+function flagToISO(flag) {
+  if (!flag || flag.length < 2) return null;
+  const pts = [...flag].map(c => c.codePointAt(0));
+  if (pts.length < 2) return null;
+  const base = 0x1F1E6; // regional indicator 'A'
+  if (pts[0] >= base && pts[1] >= base) {
+    return String.fromCharCode(pts[0] - base + 65, pts[1] - base + 65);
+  }
+  return null;
+}
+
+// Approximate bounding boxes [x,y,w,h] on a 700×360 equirectangular canvas
+const COUNTRY_BOXES = {
+  US:[80,100,130,70], CA:[80,50,140,70],  MX:[90,145,60,45],
+  BR:[160,195,90,90], AR:[155,255,55,70], CL:[148,220,20,80],
+  CO:[130,175,40,40], VE:[140,165,45,30], PE:[130,205,45,55],
+  UY:[168,263,20,18], CU:[118,148,30,14], PR:[148,154,12,10],
+  GB:[340,85,20,20],  FR:[340,95,25,20],  DE:[355,85,25,20],
+  ES:[330,105,30,20], IT:[365,100,20,30], PT:[325,105,12,18],
+  NL:[347,83,14,12],  BE:[344,87,12,10],  CH:[350,97,12,10],
+  AT:[358,95,15,10],  SE:[365,55,18,30],  NO:[355,45,20,30],
+  DK:[352,73,12,12],  FI:[378,50,18,28],  PL:[370,80,25,18],
+  CZ:[362,87,15,10],  HU:[368,93,15,10],  RO:[380,95,20,15],
+  BG:[378,102,14,12], GR:[375,108,15,15], HR:[362,100,14,10],
+  RS:[372,98,12,10],  SK:[368,88,14,9],   IE:[332,80,14,12],
+  BY:[385,75,20,15],  UA:[400,88,40,22],  RU:[390,50,180,80],
+  TR:[415,105,40,22], IL:[415,118,10,12], SA:[430,130,45,35],
+  AE:[450,130,15,12], IR:[445,110,40,30], IQ:[432,115,18,18],
+  PK:[475,115,30,30], IN:[480,120,45,55], BD:[498,128,14,14],
+  NP:[488,118,15,10], LK:[490,150,8,10],  MM:[508,130,18,22],
+  TH:[510,145,20,30], VN:[520,140,15,35], MY:[518,160,25,15],
+  SG:[528,168,6,6],   ID:[520,175,70,30], PH:[545,145,25,35],
+  CN:[490,90,90,55],  JP:[570,95,20,25],  KR:[560,100,15,18],
+  KZ:[450,75,60,30],  UZ:[455,95,25,15],  AF:[460,110,25,18],
+  AU:[530,220,100,80],NZ:[600,265,20,25],
+  EG:[400,120,25,20], MA:[330,120,20,18], NG:[355,175,25,25],
+  KE:[405,180,20,20], ZA:[370,240,35,35], ET:[410,170,20,20],
+  GH:[345,178,15,15],
+};
+
+function buildCountryCount() {
+  const counts = {};
+  for (const u of onlineUsers) {
+    const iso = flagToISO(u.flag);
+    if (iso) counts[iso] = (counts[iso] || 0) + 1;
+  }
+  return counts;
+}
+
+function drawWorldMap() {
+  const canvas = document.getElementById('map-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 700, H = 360;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background fill
+  ctx.fillStyle = '#010801';
+  ctx.fillRect(0, 0, W, H);
+
+  // Dot grid
+  ctx.fillStyle = 'rgba(78,255,145,0.05)';
+  for (let x = 8; x < W; x += 12)
+    for (let y = 8; y < H; y += 12)
+      ctx.fillRect(x, y, 1.5, 1.5);
+
+  // Border
+  ctx.strokeStyle = 'rgba(78,255,145,0.08)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(2, 2, W-4, H-4);
+
+  const counts  = buildCountryCount();
+  const maxCount = Math.max(1, ...Object.values(counts));
+
+  for (const [iso, box] of Object.entries(COUNTRY_BOXES)) {
+    const [x, y, w, h] = box;
+    const count = counts[iso] || 0;
+
+    if (count > 0) {
+      const t = count / maxCount;
+      // Glow halo
+      ctx.shadowColor = '#4eff91';
+      ctx.shadowBlur  = 12 * t;
+      ctx.fillStyle   = `rgba(78,255,145,${0.08 + 0.35 * t})`;
+      ctx.fillRect(x-2, y-2, w+4, h+4);
+      ctx.shadowBlur  = 0;
+      // Solid fill
+      ctx.fillStyle   = `rgba(78,255,145,${0.15 + 0.5 * t})`;
+      ctx.fillRect(x, y, w, h);
+      // Border
+      ctx.strokeStyle = `rgba(78,255,145,${0.5 + 0.5 * t})`;
+      ctx.lineWidth   = 1;
+      ctx.strokeRect(x, y, w, h);
+      // Label
+      ctx.fillStyle   = count > 1 ? '#4eff91' : `rgba(78,255,145,0.9)`;
+      ctx.shadowColor = '#4eff91';
+      ctx.shadowBlur  = 4;
+      if (count > 1) {
+        ctx.font = `bold ${Math.min(w, h, 12)}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(count, x + w/2, y + h/2);
+      } else {
+        ctx.beginPath();
+        ctx.arc(x + w/2, y + h/2, 3, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+    } else {
+      // Empty outline
+      ctx.strokeStyle = 'rgba(78,255,145,0.1)';
+      ctx.lineWidth   = 0.5;
+      ctx.strokeRect(x, y, w, h);
+    }
+  }
+
+  // Legend
+  const legend    = document.getElementById('map-panel').querySelector('#map-legend');
+  const total     = onlineUsers.length;
+  const countries = Object.keys(counts).length;
+  if (legend) legend.textContent =
+    `${total} user${total !== 1 ? 's' : ''} online across ${countries} countr${countries !== 1 ? 'ies' : 'y'}`;
+}
+
+function openWorldMap() {
+  document.getElementById('map-overlay').classList.add('open');
+  drawWorldMap();
+}
+function closeWorldMap() {
+  document.getElementById('map-overlay').classList.remove('open');
+}
+document.getElementById('map-overlay').addEventListener('click', e => {
+  if (e.target.id === 'map-overlay') closeWorldMap();
 });
 
 // ══════════════════════════════════════════════════════════
