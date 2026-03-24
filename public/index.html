@@ -2011,9 +2011,27 @@ function parseAndSendCmd(raw) {
   const target = parts[1] || '';
 
   if (cmd === '/help') {
-    const lines = availableCmds().map(c =>
-      `${c.cmd}${c.args ? ' ' + c.args : ''} — ${c.desc}`
-    );
+    const isMod   = myRole === 'mod' || myRole === 'owner';
+    const isOwner = myRole === 'owner';
+    const lines   = [
+      '— WORLDCHAT COMMANDS ————————————————',
+      '/help — show this list',
+    ];
+    if (isMod || isOwner) {
+      lines.push('/kick <handle> — mute someone for 1 hour');
+      lines.push('/mute <handle> — same as /kick');
+      lines.push('/unmute <handle> — lift a mute early');
+    }
+    if (isOwner) {
+      lines.push('/promote <handle> — make someone a mod');
+      lines.push('/demote <handle> — remove mod role');
+      lines.push('/ban <handle> — permanent ban');
+      lines.push('/clearhistory — wipe chat for everyone');
+    }
+    if (!isMod && !isOwner) {
+      lines.push('(no mod commands — log in as mod or owner to unlock)');
+    }
+    lines.push('—————————————————————————————————————');
     lines.forEach(l => appendMessage({ type:'system', text: l, ts: Date.now() }));
     return true;
   }
@@ -2057,22 +2075,37 @@ function parseAndSendCmd(raw) {
   return true;
 }
 
-// Command hint bar
+// Command hint bar — only matches the command token, ignores args
 const cmdHint = document.getElementById('cmd-hint');
 
 function updateCmdHint(val) {
   if (!val.startsWith('/')) { cmdHint.classList.remove('visible'); return; }
-  const typed = val.toLowerCase();
-  const matches = availableCmds().filter(c => c.cmd.startsWith(typed));
+  // Only use the first word for matching so hint persists while typing args
+  const firstWord = val.split(/\s+/)[0].toLowerCase();
+  const hasArgs   = val.includes(' ');
+  const matches   = availableCmds().filter(c => c.cmd.startsWith(firstWord));
   if (!matches.length) {
-    cmdHint.innerHTML = '<span style="color:var(--red-err)">unknown command</span>';
+    cmdHint.innerHTML = `<span style="color:var(--red-err)">${firstWord}: unknown command</span>`;
     cmdHint.classList.add('visible');
     return;
   }
+  if (hasArgs) {
+    // Exact match found and user is typing args — show just that command's usage
+    const exact = matches.find(c => c.cmd === firstWord);
+    if (exact) {
+      cmdHint.innerHTML =
+        `<span class="cmd-name">${exact.cmd}</span>` +
+        (exact.args ? ` <span style="color:var(--amber-hi)">${exact.args}</span>` : '') +
+        `<span class="cmd-sep">—</span><span style="color:var(--phosphor-lo)">${exact.desc}</span>`;
+      cmdHint.classList.add('visible');
+      return;
+    }
+  }
+  // Still narrowing down — show all matches
   cmdHint.innerHTML = matches.map((c, i) => {
     const name = `<span class="cmd-name">${c.cmd}</span>`;
     const args = c.args ? ` <span style="color:var(--amber-hi)">${c.args}</span>` : '';
-    const sep  = i < matches.length - 1 ? '<span class="cmd-sep">·</span>' : '';
+    const sep  = i < matches.length - 1 ? `<span class="cmd-sep">·</span>` : '';
     return name + args + sep;
   }).join(' ');
   cmdHint.classList.add('visible');
