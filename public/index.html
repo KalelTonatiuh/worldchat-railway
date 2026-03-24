@@ -1,702 +1,973 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WorldChat MK-II — Open Channel</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>WorldChat MK-II</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset & base ─────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html, body {
-      height: 100%;
-      background: radial-gradient(ellipse at 50% 60%, #3a2010 0%, #1a0a02 60%, #0a0402 100%);
-      font-family: 'Courier Prime', monospace;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 16px;
-    }
+  :root {
+    --wood-dark:   #2a1a08;
+    --wood-mid:    #4a2c12;
+    --wood-light:  #7a5230;
+    --wood-edge:   #9a6840;
+    --brass:       #c8941a;
+    --brass-dark:  #8a6010;
+    --brass-shine: #f0c040;
+    --screen-bg:   #030d03;
+    --phosphor:    #4eff91;
+    --phosphor-dim:#1a8040;
+    --phosphor-lo: #0d4020;
+    --amber:       #ffdd44;
+    --amber-hi:    #ffe878;
+    --red-err:     #ff5533;
+    --led-green:   #00ff44;
+    --led-amber:   #ffaa00;
+    --led-red:     #ff2200;
+  }
 
-    .machine {
-      width: 100%;
-      max-width: 700px;
-      background: linear-gradient(160deg, #6b4226 0%, #4a2c12 40%, #3a2010 100%);
-      border-radius: 20px;
-      border: 3px solid #8a6040;
-      box-shadow:
-        inset 0 2px 4px rgba(255,200,100,0.15),
-        inset 0 -3px 6px rgba(0,0,0,0.5),
-        0 20px 60px rgba(0,0,0,0.9),
-        0 2px 0 #9a7050;
-      padding: 22px;
-    }
+  html, body {
+    width: 100%; height: 100%;
+    background: #0a0604;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Special Elite', serif;
+    overflow: hidden;
+  }
 
-    .top-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-    }
+  /* ── Outer cabinet wrapper — fills viewport ───────────────────────── */
+  #cabinet {
+    width: 100vw; height: 100vh;
+    background:
+      radial-gradient(ellipse at 30% 20%, #5a3418 0%, transparent 60%),
+      radial-gradient(ellipse at 70% 80%, #3a1e08 0%, transparent 60%),
+      linear-gradient(160deg, #6b4226 0%, #4a2c12 40%, #3a2010 70%, #2a1608 100%);
+    border: none;
+    display: flex; flex-direction: column;
+    padding: clamp(8px, 2vw, 24px);
+    position: relative;
+    overflow: hidden;
+  }
 
-    .label-plate {
-      background: linear-gradient(135deg, #d4b483, #b89060, #d4b483);
-      border-radius: 6px;
-      padding: 6px 16px;
-      border: 1.5px solid #8a6830;
-      box-shadow: inset 0 1px 2px rgba(255,255,255,0.35), 0 2px 5px rgba(0,0,0,0.5);
-      font-family: 'Special Elite', cursive;
-      font-size: 14px;
-      color: #3a2208;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      user-select: none;
-    }
-
-    .indicator-row { display: flex; gap: 10px; align-items: center; }
-
-    .led {
-      width: 11px; height: 11px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(0,0,0,0.4);
-    }
-    .led.green  { background: #4eff91; box-shadow: 0 0 8px #4eff91; }
-    .led.amber  { background: #ffb830; box-shadow: 0 0 8px #ffb830; animation: blink 1.8s infinite; }
-    .led.red    { background: #ff4444; box-shadow: 0 0 6px #ff4444; }
-    .led.off    { background: #2a1a08; box-shadow: none; }
-
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
-
-    .screen-frame {
-      background: linear-gradient(135deg, #2a2018, #1a1408, #2a2018);
-      border-radius: 12px;
-      border: 3px solid #1a1008;
-      box-shadow:
-        inset 0 0 40px rgba(0,0,0,0.9),
-        inset 0 2px 4px rgba(0,0,0,0.7),
-        0 2px 0 #6a4828;
-      padding: 4px;
-      margin-bottom: 18px;
-    }
-
-    .screen-inner {
-      background: #0a160a;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid #1a2a1a;
-      position: relative;
-    }
-
-    .screen-scanlines {
-      position: absolute; inset: 0;
-      background: repeating-linear-gradient(
-        0deg, transparent, transparent 3px,
-        rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 4px
+  /* Wood grain texture overlay */
+  #cabinet::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      repeating-linear-gradient(
+        92deg,
+        transparent 0px, transparent 3px,
+        rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px
+      ),
+      repeating-linear-gradient(
+        178deg,
+        transparent 0px, transparent 8px,
+        rgba(255,255,255,0.015) 8px, rgba(255,255,255,0.015) 9px
       );
-      pointer-events: none; z-index: 5; border-radius: 8px;
-    }
+    pointer-events: none;
+    z-index: 0;
+  }
 
-    .screen-vignette {
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(0,0,0,0.5) 100%);
-      pointer-events: none; z-index: 4; border-radius: 8px;
-    }
+  /* Cabinet inner border — brass inlay */
+  #cabinet::after {
+    content: '';
+    position: absolute; inset: 6px;
+    border: 2px solid var(--brass-dark);
+    border-radius: 10px;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.4);
+    pointer-events: none;
+    z-index: 0;
+  }
 
-    .chat-header {
-      background: #080f08;
-      padding: 7px 16px;
-      border-bottom: 1px solid #1a3a1a;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: relative; z-index: 6;
-    }
+  #cabinet > * { position: relative; z-index: 1; }
 
-    .chat-header .title {
-      font-family: 'VT323', monospace;
-      font-size: 16px;
-      color: #4eff91;
-      letter-spacing: 3px;
-      text-shadow: 0 0 10px #4eff91;
-    }
+  /* ── Header bar ───────────────────────────────────────────────────── */
+  #header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px clamp(8px,2vw,20px) 8px;
+    flex-shrink: 0;
+  }
 
-    .conn-status {
-      font-family: 'VT323', monospace;
-      font-size: 14px;
-      letter-spacing: 1px;
-    }
-    .conn-status.live        { color: #4eff91; text-shadow: 0 0 6px #4eff91; }
-    .conn-status.connecting  { color: #ffb830; text-shadow: 0 0 6px #ffb830; }
-    .conn-status.error       { color: #ff5555; text-shadow: 0 0 6px #ff5555; }
+  #brand {
+    font-family: 'Special Elite', serif;
+    font-size: clamp(14px, 3vw, 22px);
+    color: var(--brass-shine);
+    letter-spacing: 0.18em;
+    text-shadow: 0 0 12px rgba(200,148,26,0.6), 0 1px 0 #000;
+    white-space: nowrap;
+  }
 
-    .messages {
-      height: 320px;
-      overflow-y: auto;
-      padding: 12px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      position: relative; z-index: 3;
-      scroll-behavior: smooth;
-    }
+  .led-row { display: flex; gap: clamp(4px, 1vw, 10px); align-items: center; }
+  .led {
+    width: clamp(8px,1.5vw,14px); height: clamp(8px,1.5vw,14px);
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.5);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  }
+  .led.green  { background: var(--led-green);  box-shadow: 0 0 8px var(--led-green); }
+  .led.amber  { background: var(--led-amber);  box-shadow: 0 0 8px var(--led-amber); animation: blink 1.4s ease-in-out infinite; }
+  .led.red    { background: var(--led-red);    box-shadow: 0 0 8px var(--led-red); }
+  .led.off    { background: #1a1a1a; box-shadow: none; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
-    .messages::-webkit-scrollbar { width: 5px; }
-    .messages::-webkit-scrollbar-track { background: #080f08; }
-    .messages::-webkit-scrollbar-thumb { background: #1a4a2a; border-radius: 3px; }
+  /* ── Screen area — grows to fill remaining space ──────────────────── */
+  #screen-housing {
+    flex: 1;
+    background: #0a0a0a;
+    border-radius: 8px;
+    border: 3px solid var(--brass-dark);
+    box-shadow:
+      inset 0 0 40px rgba(0,0,0,0.9),
+      0 0 0 1px rgba(200,148,26,0.2),
+      0 4px 20px rgba(0,0,0,0.8);
+    position: relative;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
 
-    .msg {
-      font-family: 'VT323', monospace;
-      font-size: 16px;
-      line-height: 1.45;
-      word-break: break-word;
-      animation: fadeIn 0.2s ease;
-    }
-    @keyframes fadeIn { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:none; } }
+  /* CRT scanlines */
+  #screen-housing::before {
+    content: '';
+    position: absolute; inset: 0; z-index: 10;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0px, transparent 2px,
+      rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 3px
+    );
+    pointer-events: none;
+  }
 
-    .msg .ts   { color: #1a5a30; font-size: 13px; }
-    .msg .flag { font-size: 13px; margin: 0 2px; }
-    .msg .nick { color: #4eff91; text-shadow: 0 0 6px rgba(78,255,145,0.4); }
-    .msg .nick.own { color: #ffdd44; text-shadow: 0 0 8px rgba(255,220,60,0.5); }
-    .msg .body { color: #3acc78; }
-    .msg.own .body { color: #ffe878; }
-    .msg.system .body { color: #1a7040; font-style: italic; }
-    .msg.error-msg .body { color: #ff7050; font-style: italic; }
+  /* CRT vignette */
+  #screen-housing::after {
+    content: '';
+    position: absolute; inset: 0; z-index: 11;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.7) 100%);
+    pointer-events: none;
+  }
 
-    /* Controls panel */
-    .controls-section {
-      background: linear-gradient(160deg, #5a3820, #3a2210, #2e1a0c);
-      border-radius: 12px;
-      border: 2px solid #2a1508;
-      box-shadow:
-        inset 0 1px 3px rgba(255,180,80,0.1),
-        inset 0 -2px 4px rgba(0,0,0,0.4);
-      padding: 14px 16px;
-    }
+  /* Screen inner */
+  #screen {
+    flex: 1; min-height: 0;
+    background: var(--screen-bg);
+    display: flex; flex-direction: column;
+    position: relative;
+  }
 
-    .field-row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+  /* ── Screen header ────────────────────────────────────────────────── */
+  #screen-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: clamp(4px,1vw,10px) clamp(8px,2vw,16px);
+    border-bottom: 1px solid var(--phosphor-lo);
+    flex-shrink: 0;
+  }
 
-    .field-label {
-      font-family: 'Special Elite', cursive;
-      font-size: 11px;
-      color: #c8a878;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      white-space: nowrap;
-      user-select: none;
-    }
+  #channel-label {
+    font-family: 'VT323', monospace;
+    font-size: clamp(14px,2.5vw,20px);
+    color: var(--phosphor);
+    letter-spacing: 0.12em;
+    text-shadow: 0 0 8px var(--phosphor);
+  }
 
-    .retro-input {
-      background: linear-gradient(180deg, #1a0e04, #100802);
-      border: 2px solid #5a3a18;
-      border-radius: 5px;
-      color: #e8c878;
-      font-family: 'VT323', monospace;
-      font-size: 16px;
-      padding: 5px 10px;
-      outline: none;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.7);
-      caret-color: #ffdd44;
-      letter-spacing: 1px;
-      min-width: 0;
-    }
-    .retro-input:focus { border-color: #c8a030; box-shadow: inset 0 2px 4px rgba(0,0,0,0.7), 0 0 8px rgba(200,160,48,0.25); }
-    .retro-input::placeholder { color: #5a4020; }
+  #status-live {
+    font-family: 'VT323', monospace;
+    font-size: clamp(12px,2vw,16px);
+    color: var(--led-green);
+    text-shadow: 0 0 6px var(--led-green);
+    animation: blink 1s ease-in-out infinite;
+  }
 
-    .msg-row { display: flex; gap: 10px; align-items: flex-end; }
+  /* ── Search bar ───────────────────────────────────────────────────── */
+  #search-bar {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px clamp(8px,2vw,16px);
+    border-bottom: 1px solid var(--phosphor-lo);
+    background: rgba(0,30,0,0.5);
+    flex-shrink: 0;
+  }
+  #search-bar.open { display: flex; }
 
-    .retro-textarea {
-      flex: 1;
-      background: linear-gradient(180deg, #1a0e04, #100802);
-      border: 2px solid #5a3a18;
-      border-radius: 5px;
-      color: #e8c878;
-      font-family: 'VT323', monospace;
-      font-size: 17px;
-      padding: 8px 10px;
-      outline: none;
-      resize: none;
-      height: 54px;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.7);
-      caret-color: #ffdd44;
-      letter-spacing: 1px;
-      line-height: 1.4;
-    }
-    .retro-textarea:focus { border-color: #c8a030; box-shadow: inset 0 2px 4px rgba(0,0,0,0.7), 0 0 8px rgba(200,160,48,0.25); }
-    .retro-textarea::placeholder { color: #5a4020; }
+  .search-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
-    .send-btn {
-      background: linear-gradient(160deg, #8a5a28, #5a3810, #4a2c08);
-      border: 2px solid #9a7040;
-      border-radius: 8px;
-      color: #ffd878;
-      font-family: 'Special Elite', cursive;
-      font-size: 12px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      padding: 0 16px;
-      height: 54px;
-      cursor: pointer;
-      box-shadow:
-        inset 0 2px 3px rgba(255,200,100,0.2),
-        inset 0 -2px 4px rgba(0,0,0,0.4),
-        0 4px 8px rgba(0,0,0,0.5),
-        0 1px 0 #b08040;
-      transition: background 0.1s, transform 0.08s, box-shadow 0.08s;
-      white-space: nowrap;
-      line-height: 1.4;
-      text-align: center;
-    }
-    .send-btn:hover:not(:disabled) { background: linear-gradient(160deg, #9a6a38, #6a4820, #5a3818); }
-    .send-btn:active:not(:disabled) {
-      box-shadow: inset 0 3px 6px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.4);
-      transform: translateY(2px);
-    }
-    .send-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .search-label {
+    font-family: 'VT323', monospace;
+    font-size: clamp(12px,2vw,15px);
+    color: var(--phosphor-dim);
+    white-space: nowrap;
+  }
 
-    .sm-btn {
-      height: 32px; padding: 0 12px;
-      font-size: 10px; letter-spacing: 1px;
-    }
+  .search-input {
+    background: rgba(0,20,0,0.8);
+    border: 1px solid var(--phosphor-lo);
+    color: var(--phosphor);
+    font-family: 'VT323', monospace;
+    font-size: clamp(13px,2vw,16px);
+    padding: 2px 6px;
+    outline: none;
+    flex: 1;
+    min-width: 80px;
+  }
+  .search-input:focus { border-color: var(--phosphor-dim); }
+  .search-input::placeholder { color: var(--phosphor-lo); }
 
-    .bottom-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 14px;
-    }
+  select.search-input option { background: #0a160a; }
 
-    .rivet-row { display: flex; gap: 20px; }
-    .rivet {
-      width: 13px; height: 13px;
-      background: radial-gradient(circle at 35% 35%, #d4c4a8, #8a7860, #4a3820);
-      border-radius: 50%;
-      box-shadow: inset 0 1px 2px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.6);
-    }
+  #search-results-count {
+    font-family: 'VT323', monospace;
+    font-size: clamp(11px,1.8vw,14px);
+    color: var(--phosphor-dim);
+    padding: 0 clamp(8px,2vw,16px);
+  }
 
-    .stats-display {
-      background: #080c06;
-      border: 1.5px solid #1a3a12;
-      border-radius: 5px;
-      padding: 4px 12px;
-      font-family: 'VT323', monospace;
-      font-size: 14px;
-      color: #1a6a38;
-      letter-spacing: 1px;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.7);
-      text-align: center;
-    }
-    .stats-display .hi { color: #4eff91; text-shadow: 0 0 6px #4eff91; }
+  /* ── Message feed ─────────────────────────────────────────────────── */
+  #feed {
+    flex: 1; min-height: 0;
+    overflow-y: auto;
+    padding: clamp(6px,1.5vw,14px) clamp(8px,2vw,16px);
+    scroll-behavior: smooth;
+  }
 
-    /* Setup overlay */
-    #setup-overlay {
-      position: fixed; inset: 0;
-      background: rgba(8,4,2,0.94);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      padding: 20px;
-    }
+  #feed::-webkit-scrollbar { width: 6px; }
+  #feed::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+  #feed::-webkit-scrollbar-thumb { background: var(--phosphor-lo); border-radius: 3px; }
 
-    .setup-box {
-      background: linear-gradient(160deg, #5a3820, #3a2210);
-      border: 2px solid #8a6040;
-      border-radius: 14px;
-      padding: 28px 30px;
-      max-width: 400px;
-      width: 100%;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.9);
-    }
+  .msg-line {
+    font-family: 'VT323', monospace;
+    font-size: clamp(15px,2.5vw,20px);
+    line-height: 1.4;
+    color: var(--phosphor);
+    text-shadow: 0 0 6px rgba(78,255,145,0.4);
+    margin-bottom: 2px;
+    word-break: break-word;
+    transition: opacity 0.2s;
+  }
+  .msg-line.own { color: var(--amber); text-shadow: 0 0 6px rgba(255,221,68,0.4); }
+  .msg-line.system { color: var(--phosphor-dim); font-style: italic; }
+  .msg-line.error-msg { color: var(--red-err); }
+  .msg-line.hidden { display: none; }
+  .msg-line.highlight { background: rgba(78,255,145,0.08); border-left: 2px solid var(--phosphor); padding-left: 4px; }
 
-    .setup-title {
-      font-family: 'Special Elite', cursive;
-      font-size: 22px;
-      color: #d4b483;
-      letter-spacing: 2px;
-      text-align: center;
-      margin-bottom: 4px;
-    }
-    .setup-sub {
-      font-family: 'VT323', monospace;
-      font-size: 15px;
-      color: #3acc78;
-      text-align: center;
-      letter-spacing: 2px;
-      margin-bottom: 22px;
-      text-shadow: 0 0 6px rgba(78,255,145,0.4);
-    }
+  .ts { color: var(--phosphor-lo); }
+  .handle { color: var(--phosphor); font-weight: bold; }
+  .msg-line.own .handle { color: var(--amber-hi); }
 
-    .setup-field { margin-bottom: 16px; }
-    .setup-field label {
-      display: block;
-      font-family: 'Special Elite', cursive;
-      font-size: 11px;
-      color: #c8a878;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-    .setup-field input, .setup-field select {
-      width: 100%;
-      background: linear-gradient(180deg, #1a0e04, #100802);
-      border: 2px solid #5a3a18;
-      border-radius: 5px;
-      color: #e8c878;
-      font-family: 'VT323', monospace;
-      font-size: 18px;
-      padding: 8px 12px;
-      outline: none;
-      letter-spacing: 1px;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.7);
-      caret-color: #ffdd44;
-    }
-    .setup-field input:focus, .setup-field select:focus { border-color: #c8a030; }
-    .setup-field select option { background: #2a1a08; color: #e8c878; }
-    .setup-hint {
-      font-family: 'VT323', monospace;
-      font-size: 13px;
-      color: #5a7050;
-      margin-top: 4px;
-    }
+  /* ── Controls bar ─────────────────────────────────────────────────── */
+  #controls {
+    border-top: 1px solid var(--brass-dark);
+    padding: clamp(6px,1.5vw,12px) clamp(8px,2vw,16px);
+    display: flex; flex-direction: column; gap: clamp(4px,1vw,8px);
+    flex-shrink: 0;
+    background: rgba(0,0,0,0.3);
+  }
 
-    .setup-btn {
-      width: 100%;
-      background: linear-gradient(160deg, #8a5a28, #5a3810, #4a2c08);
-      border: 2px solid #9a7040;
-      border-radius: 8px;
-      color: #ffd878;
-      font-family: 'Special Elite', cursive;
-      font-size: 14px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      padding: 12px;
-      cursor: pointer;
-      margin-top: 8px;
-      box-shadow: inset 0 2px 3px rgba(255,200,100,0.2), 0 4px 10px rgba(0,0,0,0.5);
-      transition: background 0.1s, transform 0.08s;
-    }
-    .setup-btn:hover { background: linear-gradient(160deg, #9a6a38, #6a4820, #5a3818); }
-    .setup-btn:active { transform: translateY(1px); }
+  .control-row { display: flex; gap: clamp(4px,1vw,8px); align-items: center; flex-wrap: wrap; }
 
-    @media (max-width: 480px) {
-      .machine { padding: 14px; }
-      .messages { height: 260px; }
-      .label-plate { font-size: 11px; letter-spacing: 2px; padding: 5px 10px; }
-    }
-  </style>
+  .ctrl-label {
+    font-family: 'Special Elite', serif;
+    font-size: clamp(10px,1.8vw,13px);
+    color: var(--brass);
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .ctrl-input {
+    background: rgba(10,5,0,0.8);
+    border: 1px solid var(--brass-dark);
+    border-bottom: 2px solid var(--brass);
+    color: var(--amber);
+    font-family: 'Courier Prime', monospace;
+    font-size: clamp(13px,2vw,16px);
+    padding: clamp(3px,0.8vw,6px) clamp(6px,1.2vw,10px);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .ctrl-input:focus {
+    border-color: var(--brass-shine);
+    box-shadow: 0 0 8px rgba(200,148,26,0.3);
+  }
+
+  #handle-input { flex: 1; min-width: 80px; max-width: 200px; }
+  #flag-display {
+    font-size: clamp(16px,3vw,22px);
+    cursor: pointer;
+    padding: 2px 6px;
+    border: 1px solid var(--brass-dark);
+    background: rgba(10,5,0,0.6);
+    border-radius: 2px;
+    transition: border-color 0.15s;
+  }
+  #flag-display:hover { border-color: var(--brass); }
+
+  #change-btn, #search-toggle-btn {
+    font-family: 'Special Elite', serif;
+    font-size: clamp(10px,1.8vw,13px);
+    background: linear-gradient(160deg, var(--brass) 0%, var(--brass-dark) 100%);
+    color: #1a0e00;
+    border: 1px solid var(--brass-shine);
+    padding: clamp(4px,0.8vw,7px) clamp(8px,1.5vw,14px);
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: filter 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  #change-btn:hover, #search-toggle-btn:hover { filter: brightness(1.2); }
+  #change-btn:active, #search-toggle-btn:active { transform: scale(0.97); }
+  #search-toggle-btn { background: linear-gradient(160deg, #2a4a2a 0%, #1a2e1a 100%); color: var(--phosphor); border-color: var(--phosphor-lo); }
+  #search-toggle-btn.active { background: linear-gradient(160deg, #1a4a1a 0%, #0a2e0a 100%); border-color: var(--phosphor); }
+
+  #msg-input {
+    flex: 1;
+    background: rgba(0,8,0,0.9);
+    border: 1px solid var(--phosphor-lo);
+    border-bottom: 2px solid var(--phosphor-dim);
+    color: var(--phosphor);
+    font-family: 'VT323', monospace;
+    font-size: clamp(16px,2.8vw,22px);
+    padding: clamp(4px,1vw,8px) clamp(8px,1.5vw,12px);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #msg-input:focus { border-color: var(--phosphor); box-shadow: 0 0 8px rgba(78,255,145,0.2); }
+  #msg-input::placeholder { color: var(--phosphor-lo); }
+
+  #send-btn {
+    font-family: 'Special Elite', serif;
+    font-size: clamp(11px,2vw,14px);
+    background: linear-gradient(160deg, var(--brass) 0%, var(--brass-dark) 100%);
+    color: #1a0e00;
+    border: 1px solid var(--brass-shine);
+    padding: clamp(4px,1vw,8px) clamp(12px,2vw,20px);
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: filter 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  #send-btn:hover { filter: brightness(1.2); }
+  #send-btn:active { transform: scale(0.97); }
+
+  /* ── Status bar ───────────────────────────────────────────────────── */
+  #statusbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: clamp(4px,0.8vw,8px) clamp(8px,2vw,16px);
+    border-top: 1px solid var(--wood-mid);
+    flex-shrink: 0;
+    gap: 8px; flex-wrap: wrap;
+  }
+
+  .status-item {
+    font-family: 'VT323', monospace;
+    font-size: clamp(12px,2vw,16px);
+    color: var(--phosphor-dim);
+    border: 1px solid var(--phosphor-lo);
+    padding: 1px clamp(6px,1.2vw,10px);
+    white-space: nowrap;
+  }
+  .status-item span { color: var(--phosphor); }
+
+  .status-leds { display: flex; gap: clamp(4px,1vw,8px); }
+
+  /* ── Overlays ─────────────────────────────────────────────────────── */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .overlay.hidden { display: none; }
+
+  .panel {
+    background: linear-gradient(160deg, #5a3418 0%, #3a1e08 60%, #2a1208 100%);
+    border: 2px solid var(--brass);
+    box-shadow: 0 0 40px rgba(200,148,26,0.3), inset 0 0 20px rgba(0,0,0,0.5);
+    padding: clamp(16px,4vw,32px);
+    max-width: 480px; width: 100%;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  .panel-title {
+    font-family: 'Special Elite', serif;
+    font-size: clamp(16px,3vw,22px);
+    color: var(--brass-shine);
+    letter-spacing: 0.15em;
+    text-align: center;
+    text-shadow: 0 0 12px rgba(200,148,26,0.5);
+    border-bottom: 1px solid var(--brass-dark);
+    padding-bottom: 12px;
+  }
+
+  .panel-field { display: flex; flex-direction: column; gap: 6px; }
+  .panel-label {
+    font-family: 'Special Elite', serif;
+    font-size: clamp(11px,1.8vw,14px);
+    color: var(--brass);
+    letter-spacing: 0.08em;
+  }
+
+  .panel-input {
+    background: rgba(0,0,0,0.6);
+    border: 1px solid var(--brass-dark);
+    border-bottom: 2px solid var(--brass);
+    color: var(--amber);
+    font-family: 'Courier Prime', monospace;
+    font-size: clamp(14px,2.2vw,18px);
+    padding: 8px 12px;
+    outline: none;
+    width: 100%;
+  }
+  .panel-input:focus { border-color: var(--brass-shine); }
+
+  .flag-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+    gap: 4px; max-height: 180px; overflow-y: auto;
+    border: 1px solid var(--brass-dark); padding: 6px; background: rgba(0,0,0,0.4);
+  }
+  .flag-grid::-webkit-scrollbar { width: 4px; }
+  .flag-grid::-webkit-scrollbar-thumb { background: var(--brass-dark); }
+
+  .flag-btn {
+    font-size: 20px; cursor: pointer; padding: 2px;
+    background: transparent; border: 1px solid transparent;
+    border-radius: 2px; text-align: center;
+    transition: border-color 0.1s, background 0.1s;
+  }
+  .flag-btn:hover { border-color: var(--brass); background: rgba(200,148,26,0.1); }
+  .flag-btn.selected { border-color: var(--brass-shine); background: rgba(200,148,26,0.2); }
+
+  .panel-btn {
+    font-family: 'Special Elite', serif;
+    font-size: clamp(13px,2vw,16px);
+    background: linear-gradient(160deg, var(--brass) 0%, var(--brass-dark) 100%);
+    color: #1a0e00;
+    border: 1px solid var(--brass-shine);
+    padding: 10px 20px;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    width: 100%;
+    transition: filter 0.15s;
+  }
+  .panel-btn:hover { filter: brightness(1.15); }
+
+  .disclaimer {
+    font-family: 'Courier Prime', monospace;
+    font-size: clamp(9px,1.5vw,11px);
+    color: #888;
+    text-align: center;
+    line-height: 1.5;
+    border-top: 1px solid var(--brass-dark);
+    padding-top: 10px;
+  }
+  .disclaimer strong { color: var(--red-err); }
+
+  /* Bot check panel */
+  #botcheck-overlay .panel { max-width: 340px; }
+  #challenge-text {
+    font-family: 'VT323', monospace;
+    font-size: clamp(28px,6vw,48px);
+    color: var(--phosphor);
+    text-align: center;
+    text-shadow: 0 0 16px var(--phosphor);
+  }
+  #botcheck-hint {
+    font-family: 'VT323', monospace;
+    font-size: clamp(13px,2vw,16px);
+    color: var(--phosphor-dim);
+    text-align: center;
+  }
+
+  /* ── Mobile tweaks ────────────────────────────────────────────────── */
+  @media (max-width: 480px) {
+    #cabinet { padding: 4px; }
+    .control-row { gap: 4px; }
+    #handle-input { max-width: 130px; }
+    .search-row { gap: 4px; }
+  }
+</style>
 </head>
 <body>
 
-<!-- Setup overlay -->
-<div id="setup-overlay">
-  <div class="setup-box">
-    <div class="setup-title">WorldChat MK-II</div>
-    <div class="setup-sub">// WORLDWIDE OPEN CHANNEL //</div>
+<!-- ═══════════════════════════════════════════════════════════ CABINET -->
+<div id="cabinet">
 
-    <div class="setup-field">
-      <label>Your callsign / handle</label>
-      <input type="text" id="setup-handle" maxlength="20" placeholder="drifter_77" autocomplete="off" />
-      <div class="setup-hint">letters, numbers, underscores — max 20 chars</div>
+  <!-- Header -->
+  <div id="header">
+    <div id="brand">WORLDCHAT MK—II</div>
+    <div class="led-row">
+      <div class="led green" id="led-conn" title="Connection"></div>
+      <div class="led amber" id="led-tx"   title="Transmit"></div>
+      <div class="led red"   id="led-err"  style="opacity:0.2" title="Error"></div>
+    </div>
+  </div>
+
+  <!-- Screen housing -->
+  <div id="screen-housing">
+    <div id="screen">
+
+      <!-- Screen header -->
+      <div id="screen-header">
+        <div id="channel-label">// WORLDWIDE OPEN CHANNEL //</div>
+        <div id="status-live">● LIVE</div>
+      </div>
+
+      <!-- Search bar (hidden by default) -->
+      <div id="search-bar">
+        <div class="search-row">
+          <span class="search-label">TEXT:</span>
+          <input class="search-input" id="search-text" type="text" placeholder="search messages…" autocomplete="off">
+          <span class="search-label">FLAG:</span>
+          <select class="search-input" id="search-flag" style="width:70px">
+            <option value="">ALL</option>
+          </select>
+          <span class="search-label">FROM:</span>
+          <input class="search-input" id="search-from" type="time" style="width:80px">
+          <span class="search-label">TO:</span>
+          <input class="search-input" id="search-to"   type="time" style="width:80px">
+          <button class="panel-btn" id="search-clear-btn" style="width:auto;padding:2px 10px;font-size:12px">CLR</button>
+        </div>
+        <div id="search-results-count"></div>
+      </div>
+
+      <!-- Message feed -->
+      <div id="feed">
+        <div class="msg-line system">— WORLDCHAT MK-II INITIALISING —</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div id="controls">
+    <!-- Handle + flag + change + search -->
+    <div class="control-row">
+      <span class="ctrl-label">HANDLE:</span>
+      <input class="ctrl-input" id="handle-input" type="text" maxlength="24" autocomplete="off" spellcheck="false">
+      <span class="ctrl-label">FLAG:</span>
+      <div id="flag-display" title="Click to change flag">🌍</div>
+      <button id="change-btn">CHANGE</button>
+      <button id="search-toggle-btn" title="Toggle search">🔍</button>
+    </div>
+    <!-- Message input -->
+    <div class="control-row">
+      <input class="ctrl-input" id="msg-input" type="text" maxlength="400"
+             placeholder="type your message… enter to send" autocomplete="off" spellcheck="false" style="flex:1">
+      <button id="send-btn">SEND ▶▶</button>
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <div id="statusbar">
+    <div class="status-leds">
+      <div class="led green"  style="width:10px;height:10px"></div>
+      <div class="led off"    style="width:10px;height:10px"></div>
+      <div class="led off"    style="width:10px;height:10px"></div>
+    </div>
+    <div class="status-item">ONLINE: <span id="online-count">—</span></div>
+    <div class="status-item">MSGS: <span id="msg-count">0</span></div>
+    <div class="status-leds">
+      <div class="led off"    style="width:10px;height:10px"></div>
+      <div class="led off"    style="width:10px;height:10px"></div>
+      <div class="led amber"  style="width:10px;height:10px"></div>
+    </div>
+  </div>
+
+</div><!-- /cabinet -->
+
+<!-- ═══════════════════════════════════════════════════════════ SETUP OVERLAY -->
+<div class="overlay" id="setup-overlay">
+  <div class="panel">
+    <div class="panel-title">◈ WORLDCHAT MK-II ◈</div>
+
+    <div class="panel-field">
+      <div class="panel-label">CALLSIGN / HANDLE</div>
+      <input class="panel-input" id="setup-handle" type="text" maxlength="24"
+             placeholder="e.g. drifter_77" autocomplete="off" spellcheck="false">
     </div>
 
-    <div class="setup-field">
-      <label>Your country flag</label>
-      <select id="setup-flag">
-        <option value="🌍">🌍 Anonymous / Unknown</option>
-        <option value="🇺🇸">🇺🇸 United States</option>
-        <option value="🇬🇧">🇬🇧 United Kingdom</option>
-        <option value="🇨🇦">🇨🇦 Canada</option>
-        <option value="🇦🇺">🇦🇺 Australia</option>
-        <option value="🇩🇪">🇩🇪 Germany</option>
-        <option value="🇫🇷">🇫🇷 France</option>
-        <option value="🇪🇸">🇪🇸 Spain</option>
-        <option value="🇮🇹">🇮🇹 Italy</option>
-        <option value="🇵🇹">🇵🇹 Portugal</option>
-        <option value="🇧🇷">🇧🇷 Brazil</option>
-        <option value="🇲🇽">🇲🇽 Mexico</option>
-        <option value="🇦🇷">🇦🇷 Argentina</option>
-        <option value="🇨🇴">🇨🇴 Colombia</option>
-        <option value="🇯🇵">🇯🇵 Japan</option>
-        <option value="🇰🇷">🇰🇷 South Korea</option>
-        <option value="🇨🇳">🇨🇳 China</option>
-        <option value="🇮🇳">🇮🇳 India</option>
-        <option value="🇵🇭">🇵🇭 Philippines</option>
-        <option value="🇮🇩">🇮🇩 Indonesia</option>
-        <option value="🇻🇳">🇻🇳 Vietnam</option>
-        <option value="🇹🇭">🇹🇭 Thailand</option>
-        <option value="🇷🇺">🇷🇺 Russia</option>
-        <option value="🇵🇱">🇵🇱 Poland</option>
-        <option value="🇺🇦">🇺🇦 Ukraine</option>
-        <option value="🇹🇷">🇹🇷 Turkey</option>
-        <option value="🇸🇦">🇸🇦 Saudi Arabia</option>
-        <option value="🇪🇬">🇪🇬 Egypt</option>
-        <option value="🇳🇬">🇳🇬 Nigeria</option>
-        <option value="🇿🇦">🇿🇦 South Africa</option>
-        <option value="🇸🇬">🇸🇬 Singapore</option>
-        <option value="🇲🇾">🇲🇾 Malaysia</option>
-        <option value="🇸🇪">🇸🇪 Sweden</option>
-        <option value="🇳🇴">🇳🇴 Norway</option>
-        <option value="🇩🇰">🇩🇰 Denmark</option>
-        <option value="🇫🇮">🇫🇮 Finland</option>
-        <option value="🇳🇱">🇳🇱 Netherlands</option>
-        <option value="🇧🇪">🇧🇪 Belgium</option>
-        <option value="🇨🇭">🇨🇭 Switzerland</option>
-        <option value="🇦🇹">🇦🇹 Austria</option>
-        <option value="🇳🇿">🇳🇿 New Zealand</option>
-        <option value="🇨🇱">🇨🇱 Chile</option>
-        <option value="🇵🇪">🇵🇪 Peru</option>
-        <option value="🇵🇰">🇵🇰 Pakistan</option>
-        <option value="🇧🇩">🇧🇩 Bangladesh</option>
-        <option value="🇮🇷">🇮🇷 Iran</option>
-        <option value="🇮🇱">🇮🇱 Israel</option>
-        <option value="🇰🇪">🇰🇪 Kenya</option>
-        <option value="🇬🇭">🇬🇭 Ghana</option>
-      </select>
+    <div class="panel-field">
+      <div class="panel-label">YOUR COUNTRY</div>
+      <div class="flag-grid" id="flag-grid"></div>
     </div>
 
-    <button class="setup-btn" onclick="enterChat()">⚡ ENTER THE CHANNEL ⚡</button>
+    <button class="panel-btn" id="setup-join-btn">▶ JOIN THE CHANNEL</button>
+
+    <div class="disclaimer">
+      <strong>⚠ PUBLIC CHANNEL — NO ENCRYPTION</strong><br>
+      All messages are visible to everyone. This chat is completely open,
+      unencrypted, and unmoderated. Do not share personal information.<br>
+      Links are automatically filtered. By joining you accept these terms.
+    </div>
   </div>
 </div>
 
-<!-- Machine -->
-<div class="machine">
-  <div class="top-bar">
-    <div class="label-plate">WorldChat MK-II</div>
-    <div class="indicator-row">
-      <div class="led off"   id="led-conn"      title="Connection"></div>
-      <div class="led amber" id="led-activity"  title="Activity"></div>
-      <div class="led red"   id="led-broadcast" title="Broadcast"></div>
+<!-- ═══════════════════════════════════════════════════════════ BOT CHECK OVERLAY -->
+<div class="overlay hidden" id="botcheck-overlay">
+  <div class="panel">
+    <div class="panel-title">◈ HUMAN VERIFICATION ◈</div>
+    <div id="botcheck-hint">Solve to enter the channel:</div>
+    <div id="challenge-text">? + ? = ?</div>
+    <div class="panel-field">
+      <input class="panel-input" id="botcheck-input" type="number" placeholder="your answer"
+             style="text-align:center;font-size:28px">
     </div>
+    <button class="panel-btn" id="botcheck-submit-btn">▶ SUBMIT</button>
   </div>
+</div>
 
-  <div class="screen-frame">
-    <div class="screen-inner">
-      <div class="screen-scanlines"></div>
-      <div class="screen-vignette"></div>
-      <div class="chat-header">
-        <span class="title">// WORLDWIDE OPEN CHANNEL //</span>
-        <span class="conn-status connecting" id="conn-status">CONNECTING…</span>
-      </div>
-      <div class="messages" id="messages">
-        <div class="msg system"><span class="body">— WORLDCHAT MK-II INITIALISING —</span></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="controls-section">
-    <div class="field-row">
-      <span class="field-label">Handle:</span>
-      <input class="retro-input" id="nick-display" style="max-width:160px;" readonly />
-      <span class="field-label" style="margin-left:8px;">Flag:</span>
-      <span id="flag-display" style="font-size:22px;line-height:1;">🌍</span>
-      <button class="send-btn sm-btn" style="margin-left:auto;" onclick="document.getElementById('setup-overlay').style.display='flex';">CHANGE</button>
-    </div>
-    <div class="msg-row">
-      <textarea class="retro-textarea" id="msg-input" placeholder="type your message… enter to send" maxlength="400" disabled></textarea>
-      <button class="send-btn" id="send-btn" disabled>SEND<br>▶▶</button>
-    </div>
-  </div>
-
-  <div class="bottom-bar">
-    <div class="rivet-row">
-      <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
-    </div>
-    <div class="stats-display">
-      ONLINE: <span class="hi" id="online-count">—</span>
-      &nbsp;|&nbsp;
-      MSGS: <span class="hi" id="msg-count">0</span>
-    </div>
-    <div class="rivet-row">
-      <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
-    </div>
+<!-- ═══════════════════════════════════════════════════════════ FLAG PICKER OVERLAY -->
+<div class="overlay hidden" id="flag-overlay">
+  <div class="panel" style="max-width:400px">
+    <div class="panel-title">◈ SELECT FLAG ◈</div>
+    <div class="flag-grid" id="flag-overlay-grid"></div>
+    <button class="panel-btn" id="flag-close-btn">CONFIRM</button>
   </div>
 </div>
 
 <script>
-// ── Config ────────────────────────────────────────────────────────────────────
-// When served from Railway, connect back to the same host over WSS.
-// For local dev, fall back to ws://localhost:3000.
-const WS_URL = (() => {
-  const loc = window.location;
-  if (loc.hostname === 'localhost' || loc.hostname === '127.0.0.1') {
-    return `ws://${loc.host}`;
-  }
-  return `wss://${loc.host}`;
-})();
+// ── Flag data ──────────────────────────────────────────────────────────────
+const FLAGS = [
+  {f:'🌍',n:'Global'},{f:'🇺🇸',n:'US'},{f:'🇬🇧',n:'UK'},{f:'🇨🇦',n:'CA'},
+  {f:'🇲🇽',n:'MX'},{f:'🇧🇷',n:'BR'},{f:'🇦🇷',n:'AR'},{f:'🇨🇱',n:'CL'},
+  {f:'🇨🇴',n:'CO'},{f:'🇵🇪',n:'PE'},{f:'🇩🇪',n:'DE'},{f:'🇫🇷',n:'FR'},
+  {f:'🇪🇸',n:'ES'},{f:'🇮🇹',n:'IT'},{f:'🇵🇹',n:'PT'},{f:'🇳🇱',n:'NL'},
+  {f:'🇧🇪',n:'BE'},{f:'🇨🇭',n:'CH'},{f:'🇦🇹',n:'AT'},{f:'🇸🇪',n:'SE'},
+  {f:'🇳🇴',n:'NO'},{f:'🇩🇰',n:'DK'},{f:'🇫🇮',n:'FI'},{f:'🇵🇱',n:'PL'},
+  {f:'🇺🇦',n:'UA'},{f:'🇷🇺',n:'RU'},{f:'🇹🇷',n:'TR'},{f:'🇬🇷',n:'GR'},
+  {f:'🇷🇴',n:'RO'},{f:'🇨🇿',n:'CZ'},{f:'🇭🇺',n:'HU'},{f:'🇧🇬',n:'BG'},
+  {f:'🇯🇵',n:'JP'},{f:'🇨🇳',n:'CN'},{f:'🇰🇷',n:'KR'},{f:'🇮🇳',n:'IN'},
+  {f:'🇮🇩',n:'ID'},{f:'🇵🇭',n:'PH'},{f:'🇻🇳',n:'VN'},{f:'🇹🇭',n:'TH'},
+  {f:'🇲🇾',n:'MY'},{f:'🇸🇬',n:'SG'},{f:'🇵🇰',n:'PK'},{f:'🇧🇩',n:'BD'},
+  {f:'🇸🇦',n:'SA'},{f:'🇮🇷',n:'IR'},{f:'🇮🇶',n:'IQ'},{f:'🇮🇱',n:'IL'},
+  {f:'🇪🇬',n:'EG'},{f:'🇳🇬',n:'NG'},{f:'🇿🇦',n:'ZA'},{f:'🇰🇪',n:'KE'},
+  {f:'🇬🇭',n:'GH'},{f:'🇪🇹',n:'ET'},{f:'🇲🇦',n:'MA'},{f:'🇦🇺',n:'AU'},
+  {f:'🇳🇿',n:'NZ'},{f:'🇨🇺',n:'CU'},{f:'🇵🇷',n:'PR'},{f:'🇺🇾',n:'UY'},
+];
 
-// ── State ─────────────────────────────────────────────────────────────────────
-let ws       = null;
-let handle   = '';
-let flag     = '🌍';
-let joined   = false;
-let msgCount = 0;
+// ── State ──────────────────────────────────────────────────────────────────
+let ws = null;
 let reconnectDelay = 1500;
+let myHandle = '';
+let myFlag = '🌍';
+let msgCount = 0;
+let allMessages = []; // {el, ts, flag, text}
+let searchOpen = false;
 
-// ── DOM ───────────────────────────────────────────────────────────────────────
-const messagesEl   = document.getElementById('messages');
-const msgInput     = document.getElementById('msg-input');
-const sendBtn      = document.getElementById('send-btn');
-const connStatus   = document.getElementById('conn-status');
-const ledConn      = document.getElementById('led-conn');
-const ledActivity  = document.getElementById('led-activity');
-const onlineCountEl = document.getElementById('online-count');
-const msgCountEl   = document.getElementById('msg-count');
+// ── DOM refs ───────────────────────────────────────────────────────────────
+const feed            = document.getElementById('feed');
+const onlineEl        = document.getElementById('online-count');
+const msgCountEl      = document.getElementById('msg-count');
+const handleInput     = document.getElementById('handle-input');
+const flagDisplay     = document.getElementById('flag-display');
+const changeBtn       = document.getElementById('change-btn');
+const msgInput        = document.getElementById('msg-input');
+const sendBtn         = document.getElementById('send-btn');
+const searchToggleBtn = document.getElementById('search-toggle-btn');
+const searchBar       = document.getElementById('search-bar');
+const searchText      = document.getElementById('search-text');
+const searchFlag      = document.getElementById('search-flag');
+const searchFrom      = document.getElementById('search-from');
+const searchTo        = document.getElementById('search-to');
+const searchClearBtn  = document.getElementById('search-clear-btn');
+const searchCount     = document.getElementById('search-results-count');
+const setupOverlay    = document.getElementById('setup-overlay');
+const setupHandle     = document.getElementById('setup-handle');
+const setupJoinBtn    = document.getElementById('setup-join-btn');
+const flagGrid        = document.getElementById('flag-grid');
+const botcheckOverlay = document.getElementById('botcheck-overlay');
+const challengeText   = document.getElementById('challenge-text');
+const botcheckInput   = document.getElementById('botcheck-input');
+const botcheckBtn     = document.getElementById('botcheck-submit-btn');
+const flagOverlay     = document.getElementById('flag-overlay');
+const flagOverlayGrid = document.getElementById('flag-overlay-grid');
+const flagCloseBtn    = document.getElementById('flag-close-btn');
+const ledConn         = document.getElementById('led-conn');
+const ledErr          = document.getElementById('led-err');
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function nowUTC() {
-  const d = new Date();
-  return d.getUTCHours().toString().padStart(2,'0') + ':' +
-         d.getUTCMinutes().toString().padStart(2,'0') + ' UTC';
+// ── Build flag grids ───────────────────────────────────────────────────────
+function buildFlagGrid(container, onSelect) {
+  container.innerHTML = '';
+  FLAGS.forEach(({f, n}) => {
+    const btn = document.createElement('button');
+    btn.className = 'flag-btn';
+    btn.textContent = f;
+    btn.title = n;
+    btn.addEventListener('click', () => {
+      container.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      onSelect(f, n);
+    });
+    container.appendChild(btn);
+  });
 }
 
-function flashActivity() {
-  ledActivity.style.background = '#4eff91';
-  ledActivity.style.boxShadow  = '0 0 8px #4eff91';
-  ledActivity.style.animation  = 'none';
-  setTimeout(() => {
-    ledActivity.style.background = '';
-    ledActivity.style.boxShadow  = '';
-    ledActivity.style.animation  = '';
-  }, 300);
+let setupFlag = '🌍';
+buildFlagGrid(flagGrid, (f) => { setupFlag = f; });
+buildFlagGrid(flagOverlayGrid, (f) => { myFlag = f; flagDisplay.textContent = f; });
+
+// Pre-select first flag in setup
+flagGrid.querySelector('.flag-btn').classList.add('selected');
+
+// Populate search flag dropdown
+const allOpt = document.createElement('option');
+allOpt.value = ''; allOpt.textContent = 'ALL';
+searchFlag.appendChild(allOpt);
+FLAGS.forEach(({f, n}) => {
+  const opt = document.createElement('option');
+  opt.value = f; opt.textContent = `${f} ${n}`;
+  searchFlag.appendChild(opt);
+});
+
+// ── Flag overlay toggle ────────────────────────────────────────────────────
+flagDisplay.addEventListener('click', () => {
+  flagOverlay.classList.remove('hidden');
+  // Mark current flag as selected
+  flagOverlayGrid.querySelectorAll('.flag-btn').forEach(b => {
+    b.classList.toggle('selected', b.textContent === myFlag);
+  });
+});
+flagCloseBtn.addEventListener('click', () => flagOverlay.classList.add('hidden'));
+
+// ── Search toggle ──────────────────────────────────────────────────────────
+searchToggleBtn.addEventListener('click', () => {
+  searchOpen = !searchOpen;
+  searchBar.classList.toggle('open', searchOpen);
+  searchToggleBtn.classList.toggle('active', searchOpen);
+  if (!searchOpen) clearSearch();
+});
+
+function runSearch() {
+  const query = searchText.value.trim().toLowerCase();
+  const flagFilter = searchFlag.value;
+  const fromStr = searchFrom.value;
+  const toStr   = searchTo.value;
+
+  let visible = 0;
+  allMessages.forEach(({el, ts, flag, text}) => {
+    const d = new Date(ts);
+    const hhmm = `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`;
+
+    let show = true;
+    if (query && !text.toLowerCase().includes(query)) show = false;
+    if (flagFilter && flag !== flagFilter) show = false;
+    if (fromStr && hhmm < fromStr) show = false;
+    if (toStr   && hhmm > toStr)   show = false;
+
+    el.classList.toggle('hidden', !show);
+    el.classList.toggle('highlight', show && !!query);
+    if (show) visible++;
+  });
+
+  const total = allMessages.length;
+  searchCount.textContent = query || flagFilter || fromStr || toStr
+    ? `${visible} / ${total} messages match`
+    : '';
 }
 
-function setStatus(label, cls) {
-  connStatus.textContent  = label;
-  connStatus.className    = 'conn-status ' + cls;
-  ledConn.className       = 'led ' + (cls === 'live' ? 'green' : 'off');
+function clearSearch() {
+  searchText.value = '';
+  searchFlag.value = '';
+  searchFrom.value = '';
+  searchTo.value   = '';
+  allMessages.forEach(({el}) => { el.classList.remove('hidden', 'highlight'); });
+  searchCount.textContent = '';
 }
 
-function setEnabled(on) {
-  msgInput.disabled = !on;
-  sendBtn.disabled  = !on;
+searchText.addEventListener('input', runSearch);
+searchFlag.addEventListener('change', runSearch);
+searchFrom.addEventListener('change', runSearch);
+searchTo.addEventListener('change', runSearch);
+searchClearBtn.addEventListener('click', clearSearch);
+
+// ── Message helpers ────────────────────────────────────────────────────────
+function formatTime(ts) {
+  const d = new Date(ts);
+  const h = String(d.getUTCHours()).padStart(2,'0');
+  const m = String(d.getUTCMinutes()).padStart(2,'0');
+  return `${h}:${m} UTC`;
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
-function renderMsg(data) {
-  msgCount++;
-  msgCountEl.textContent = msgCount;
-  flashActivity();
+function appendMessage(data) {
+  const line = document.createElement('div');
+  line.className = 'msg-line';
 
-  const div = document.createElement('div');
+  if (data.type === 'msg') {
+    if (data.own) line.classList.add('own');
+    line.innerHTML =
+      `<span class="ts">[${formatTime(data.ts)}]</span> ` +
+      `${data.flag} <span class="handle">${data.handle}:</span> ${data.text}`;
 
-  if (data.type === 'system') {
-    div.className = 'msg system';
-    div.innerHTML = `<span class="ts">[${nowUTC()}]</span> <span class="body">— ${data.text} —</span>`;
+    allMessages.push({ el: line, ts: data.ts, flag: data.flag, text: data.text });
+    msgCount++;
+    msgCountEl.textContent = msgCount;
+
+  } else if (data.type === 'system') {
+    line.classList.add('system');
+    line.textContent = `— ${data.text} —`;
+    if (data.ts) allMessages.push({ el: line, ts: data.ts, flag: '', text: data.text });
+
   } else if (data.type === 'error') {
-    div.className = 'msg error-msg';
-    div.innerHTML = `<span class="body">⚠ ${data.text}</span>`;
-  } else {
-    const own = !!data.own;
-    div.className = 'msg' + (own ? ' own' : '');
-    div.innerHTML =
-      `<span class="ts">[${nowUTC()}]</span> ` +
-      `<span class="flag">${data.flag || '🌍'}</span> ` +
-      `<span class="nick${own?' own':''}">${data.handle}:</span> ` +
-      `<span class="body">${data.text}</span>`;
+    line.classList.add('error-msg');
+    line.textContent = `⚠ ${data.text}`;
+    ledErr.style.opacity = '1';
+    setTimeout(() => ledErr.style.opacity = '0.2', 2000);
   }
 
-  messagesEl.appendChild(div);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
+  feed.appendChild(line);
+  feed.scrollTop = feed.scrollHeight;
+
+  // Flash TX led
+  ledTx();
+
+  // Re-apply search if open
+  if (searchOpen) runSearch();
 }
 
-// ── WebSocket ─────────────────────────────────────────────────────────────────
-function connect() {
-  setStatus('CONNECTING…', 'connecting');
+function ledTx() {
+  const el = document.getElementById('led-tx');
+  el.style.opacity = '1';
+  setTimeout(() => el.style.opacity = '0.6', 120);
+}
 
+// ── WebSocket ──────────────────────────────────────────────────────────────
+const WS_URL = location.hostname === 'localhost'
+  ? `ws://${location.host}`
+  : `wss://${location.host}`;
+
+function connect() {
   ws = new WebSocket(WS_URL);
 
-  ws.onopen = () => {
+  ws.addEventListener('open', () => {
     reconnectDelay = 1500;
-    setStatus('LIVE', 'live');
-    setEnabled(true);
+    ledConn.className = 'led green';
+    // Send join with saved handle/flag
+    ws.send(JSON.stringify({ type: 'join', handle: myHandle, flag: myFlag }));
+  });
 
-    if (handle) {
-      ws.send(JSON.stringify({ type: 'join', handle, flag }));
-      joined = true;
-    }
-  };
+  ws.addEventListener('message', e => {
+    let data;
+    try { data = JSON.parse(e.data); } catch { return; }
 
-  ws.onmessage = ({ data }) => {
-    let msg;
-    try { msg = JSON.parse(data); } catch { return; }
-
-    if (msg.type === 'history') {
-      msg.messages.forEach(m => renderMsg(m));
+    if (data.type === 'history') {
+      data.messages.forEach(m => appendMessage(m));
       return;
     }
 
-    if (msg.type === 'online') {
-      onlineCountEl.textContent = msg.count;
+    if (data.type === 'online') {
+      onlineEl.textContent = data.count;
       return;
     }
 
-    renderMsg(msg);
-  };
+    if (data.type === 'challenge') {
+      challengeText.textContent = `${data.question} = ?`;
+      botcheckOverlay.classList.remove('hidden');
+      botcheckInput.value = '';
+      setTimeout(() => botcheckInput.focus(), 100);
+      return;
+    }
 
-  ws.onclose = () => {
-    setStatus('DISCONNECTED', 'error');
-    setEnabled(false);
-    joined = false;
-    // Exponential back-off reconnect
-    setTimeout(() => {
-      reconnectDelay = Math.min(reconnectDelay * 1.5, 15000);
-      connect();
-    }, reconnectDelay);
-  };
+    if (data.type === 'verified') {
+      botcheckOverlay.classList.add('hidden');
+      appendMessage({ type: 'system', text: `${myHandle} ${myFlag} joined the channel`, ts: Date.now() });
+      return;
+    }
 
-  ws.onerror = () => ws.close();
+    if (data.type === 'renamed') {
+      myHandle = data.handle;
+      myFlag   = data.flag;
+      handleInput.value = myHandle;
+      flagDisplay.textContent = myFlag;
+      localStorage.setItem('wc_handle', myHandle);
+      localStorage.setItem('wc_flag', myFlag);
+      return;
+    }
+
+    appendMessage(data);
+  });
+
+  ws.addEventListener('close', () => {
+    ledConn.className = 'led red';
+    appendMessage({ type: 'system', text: 'Connection lost — reconnecting…', ts: Date.now() });
+    setTimeout(connect, reconnectDelay);
+    reconnectDelay = Math.min(reconnectDelay * 1.5, 15000);
+  });
+
+  ws.addEventListener('error', () => {
+    ledErr.style.opacity = '1';
+    setTimeout(() => ledErr.style.opacity = '0.2', 2000);
+  });
 }
 
-// ── Send ──────────────────────────────────────────────────────────────────────
-function sendMessage() {
+// ── Bot check submit ───────────────────────────────────────────────────────
+function submitBotcheck() {
+  const answer = parseInt(botcheckInput.value, 10);
+  if (isNaN(answer)) return;
+  ws.send(JSON.stringify({ type: 'botcheck', answer }));
+}
+botcheckBtn.addEventListener('click', submitBotcheck);
+botcheckInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitBotcheck(); });
+
+// ── Send message ───────────────────────────────────────────────────────────
+function sendMsg() {
   const text = msgInput.value.trim();
   if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
   ws.send(JSON.stringify({ type: 'msg', text }));
   msgInput.value = '';
-  msgInput.focus();
 }
 
-sendBtn.addEventListener('click', sendMessage);
-msgInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+sendBtn.addEventListener('click', sendMsg);
+msgInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMsg(); });
+
+// ── Change handle / flag ───────────────────────────────────────────────────
+changeBtn.addEventListener('click', () => {
+  const newHandle = handleInput.value.trim();
+  if (!newHandle) return;
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type: 'rename', handle: newHandle, flag: myFlag }));
+  localStorage.setItem('wc_handle', newHandle);
+  localStorage.setItem('wc_flag', myFlag);
 });
 
-// ── Enter chat ────────────────────────────────────────────────────────────────
-function enterChat() {
-  const raw = document.getElementById('setup-handle').value.trim();
-  handle = raw.replace(/[^a-zA-Z0-9_\-\.]/g, '').slice(0, 20) || 'anon_' + Math.floor(Math.random()*9999);
-  flag   = document.getElementById('setup-flag').value || '🌍';
-
-  document.getElementById('nick-display').value = handle;
-  document.getElementById('flag-display').textContent = flag;
-  document.getElementById('setup-overlay').style.display = 'none';
-
-  localStorage.setItem('wc_handle', handle);
-  localStorage.setItem('wc_flag', flag);
-
-  // If already connected, send join now
-  if (ws && ws.readyState === WebSocket.OPEN && !joined) {
-    ws.send(JSON.stringify({ type: 'join', handle, flag }));
-    joined = true;
-  }
+// ── Setup join ─────────────────────────────────────────────────────────────
+function doJoin() {
+  const h = setupHandle.value.trim();
+  if (!h) { setupHandle.focus(); return; }
+  myHandle = h;
+  myFlag   = setupFlag;
+  localStorage.setItem('wc_handle', myHandle);
+  localStorage.setItem('wc_flag', myFlag);
+  handleInput.value = myHandle;
+  flagDisplay.textContent = myFlag;
+  setupOverlay.classList.add('hidden');
+  connect();
 }
 
-// ── Restore saved profile ─────────────────────────────────────────────────────
+setupJoinBtn.addEventListener('click', doJoin);
+setupHandle.addEventListener('keydown', e => { if (e.key === 'Enter') doJoin(); });
+
+// ── Init ───────────────────────────────────────────────────────────────────
 const savedHandle = localStorage.getItem('wc_handle');
 const savedFlag   = localStorage.getItem('wc_flag');
-if (savedHandle) document.getElementById('setup-handle').value = savedHandle;
-if (savedFlag)   document.getElementById('setup-flag').value   = savedFlag;
 
-// ── Boot ──────────────────────────────────────────────────────────────────────
-connect();
+if (savedHandle) {
+  myHandle = savedHandle;
+  myFlag   = savedFlag || '🌍';
+  handleInput.value = myHandle;
+  flagDisplay.textContent = myFlag;
+  setupHandle.value = myHandle;
+  // Pre-select saved flag in setup grid
+  flagGrid.querySelectorAll('.flag-btn').forEach(b => {
+    b.classList.toggle('selected', b.textContent === myFlag);
+  });
+  setupFlag = myFlag;
+}
 </script>
 </body>
 </html>
