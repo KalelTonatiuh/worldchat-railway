@@ -84,7 +84,7 @@ function simpleHash(str) {
 function sanitize(str, max) {
   return String(str || '')
     .replace(/[<>&"'`]/g, c =>
-      ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;','`':'&#96;'}[c]))
+      ({'<':'&lt;','&':'&amp;','"':'&quot;',"'":'&#39;','`':'&#96;'}[c]))
     .trim()
     .slice(0, max || 9999);
 }
