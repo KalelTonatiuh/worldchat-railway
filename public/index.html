@@ -1118,7 +1118,7 @@ function appendMessage(data) {
   }
 
   feed.appendChild(line);
-  feed.scrollTop = feed.scrollHeight;
+  if (isScrolledToBottom()) feed.scrollTop = feed.scrollHeight;
   ledTx();
   if (searchOpen) runSearch();
 }
