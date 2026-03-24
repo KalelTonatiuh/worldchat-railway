@@ -382,12 +382,78 @@ select.search-input option { background: #0a160a; }
 /* ── Reverify overlay ─────────────────────────────────────────────── */
 #reverify-overlay .panel { max-width: 340px; }
 
+/* ── Unread indicator ─────────────────────────────────────────────── */
+#unread-nudge {
+  display: none; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  z-index: 20; background: linear-gradient(160deg, var(--brass) 0%, var(--brass-dark) 100%);
+  color: #1a0e00; border: 1px solid var(--brass-shine);
+  font-family: 'Special Elite', serif; font-size: 11px; letter-spacing: 0.08em;
+  padding: 5px 14px; cursor: pointer; white-space: nowrap;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.7); animation: nudge-pop 0.2s ease;
+}
+#unread-nudge.visible { display: block; }
+@keyframes nudge-pop { from { opacity:0; transform: translateX(-50%) translateY(6px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+
+/* ── Mobile expand overlay ────────────────────────────────────────── */
+#expand-btn {
+  display: none;
+  font-family: 'Special Elite', serif; font-size: clamp(10px,1.8vw,13px);
+  background: linear-gradient(160deg, #1a2a1a 0%, #0a180a 100%);
+  color: var(--phosphor); border: 1px solid var(--phosphor-lo);
+  padding: clamp(4px,0.8vw,7px) 10px; cursor: pointer;
+  letter-spacing: 0.06em; white-space: nowrap; flex-shrink: 0;
+}
+#expand-btn:active { transform: scale(0.97); }
+#expand-overlay {
+  position: fixed; inset: 0; z-index: 150; background: #030d03;
+  display: none; flex-direction: column; padding: 12px;
+}
+#expand-overlay.open { display: flex; }
+#expand-overlay textarea {
+  flex: 1; background: transparent; border: none; border-bottom: 2px solid var(--phosphor-dim);
+  color: var(--phosphor); font-family: 'VT323', monospace; font-size: 22px;
+  padding: 12px 8px; outline: none; resize: none; line-height: 1.5;
+}
+#expand-overlay textarea::placeholder { color: var(--phosphor-lo); }
+.expand-row {
+  display: flex; gap: 10px; margin-top: 12px;
+}
+.expand-row button {
+  font-family: 'Special Elite', serif; font-size: 13px; letter-spacing: 0.08em;
+  padding: 10px 20px; cursor: pointer; border: 1px solid; flex: 1;
+}
+#expand-send-btn {
+  background: linear-gradient(160deg, var(--brass) 0%, var(--brass-dark) 100%);
+  color: #1a0e00; border-color: var(--brass-shine);
+}
+#expand-cancel-btn {
+  background: transparent; color: var(--phosphor-dim); border-color: var(--phosphor-lo);
+}
+#char-count {
+  font-family: 'VT323', monospace; font-size: 14px;
+  color: var(--phosphor-lo); text-align: right; margin-top: 4px;
+}
+#char-count.near-limit { color: var(--amber); }
+#char-count.at-limit   { color: var(--red-err); }
+
+/* ── Registration error distinction ──────────────────────────────── */
+.panel-err.success { color: var(--phosphor); }
+.acc-err-box {
+  border: 1px solid; padding: 6px 10px; font-family: 'VT323', monospace; font-size: 15px;
+  text-align: center; min-height: 28px; display: none;
+}
+.acc-err-box.show { display: block; }
+.acc-err-box.error   { color: var(--red-err);   border-color: rgba(255,85,51,0.3);  background: rgba(255,85,51,0.06); }
+.acc-err-box.warning { color: var(--amber);      border-color: rgba(255,221,68,0.3); background: rgba(255,221,68,0.06); }
+.acc-err-box.ok      { color: var(--phosphor);   border-color: rgba(78,255,145,0.3); background: rgba(78,255,145,0.06); }
+
 /* ── Mobile ───────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
   #cabinet { padding: 4px; }
   .control-row { gap: 4px; }
   #handle-input { max-width: 130px; }
   .search-row { gap: 4px; }
+  #expand-btn { display: block; }
 }
 </style>
 </head>
@@ -427,6 +493,7 @@ select.search-input option { background: #0a160a; }
       <div id="feed">
         <div class="msg-line system">— WORLDCHAT MK-II INITIALISING —</div>
       </div>
+      <div id="unread-nudge">↓ <span id="unread-count">0</span> NEW</div>
     </div>
   </div>
 
@@ -443,6 +510,7 @@ select.search-input option { background: #0a160a; }
     <div class="control-row">
       <input class="ctrl-input" id="msg-input" type="text" maxlength="400"
         placeholder="type your message… enter to send" autocomplete="off" spellcheck="false" style="flex:1">
+      <button id="expand-btn" title="Expand input">⤢</button>
       <button id="send-btn">SEND ▶▶</button>
     </div>
   </div>
@@ -556,7 +624,7 @@ select.search-input option { background: #0a160a; }
         <input class="panel-input" id="login-pw" type="password" autocomplete="off">
       </div>
       <button class="panel-btn" id="login-btn">▶ LOGIN</button>
-      <div class="panel-err" id="login-err"></div>
+      <div class="acc-err-box" id="login-err"></div>
     </div>
     <!-- Register -->
     <div class="acc-section" id="acc-register">
@@ -569,7 +637,7 @@ select.search-input option { background: #0a160a; }
         <input class="panel-input" id="reg-pw" type="password" autocomplete="off">
       </div>
       <button class="panel-btn" id="reg-btn">▶ REGISTER</button>
-      <div class="panel-err" id="reg-err"></div>
+      <div class="acc-err-box" id="reg-err"></div>
       <div style="font-family:'Courier Prime',monospace;font-size:10px;color:#666;text-align:center;line-height:1.4">
         Registered users get paste privileges in chat.<br>
         Accounts reset on server restart (in-memory only).
@@ -604,6 +672,17 @@ select.search-input option { background: #0a160a; }
       You can still read the channel.
     </div>
     <button class="panel-btn" onclick="document.getElementById('muted-overlay').classList.add('hidden')">OK</button>
+  </div>
+</div>
+
+<!-- ═══════════════ EXPAND INPUT OVERLAY ═══════════════ -->
+<div id="expand-overlay">
+  <div style="font-family:'VT323',monospace;font-size:14px;color:var(--phosphor-dim);letter-spacing:0.1em;margin-bottom:4px">// COMPOSE MESSAGE //</div>
+  <textarea id="expand-textarea" maxlength="400" placeholder="type your message…" autocomplete="off" spellcheck="false"></textarea>
+  <div id="char-count">0 / 400</div>
+  <div class="expand-row">
+    <button id="expand-cancel-btn">✕ CANCEL</button>
+    <button id="expand-send-btn">SEND ▶▶</button>
   </div>
 </div>
 
@@ -1006,9 +1085,24 @@ function appendMessage(data) {
   if (data.type === 'msg') {
     if (data.own) line.classList.add('own');
     line.dataset.handle = data.handle;
-    line.innerHTML =
-      `<span class="ts">[${formatTime(data.ts)}]</span> ` +
-      `${data.flag} <span class="handle">${data.handle}:</span> ${data.text}`;
+
+    const ts = document.createElement('span');
+    ts.className = 'ts';
+    ts.textContent = `[${formatTime(data.ts)}]`;
+
+    const handleSpan = document.createElement('span');
+    handleSpan.className = 'handle';
+    handleSpan.textContent = data.handle + ':';
+
+    const textSpan = document.createElement('span');
+    textSpan.textContent = data.text;
+
+    line.appendChild(ts);
+    line.appendChild(document.createTextNode(' ' + data.flag + ' '));
+    line.appendChild(handleSpan);
+    line.appendChild(document.createTextNode(' '));
+    line.appendChild(textSpan);
+
     allMessages.push({ el: line, ts: data.ts, flag: data.flag, text: data.text, handle: data.handle });
     msgCount++;
     msgCountEl.textContent = msgCount;
@@ -1113,6 +1207,7 @@ function connect() {
       accountOverlay.classList.add('hidden');
       accountBtn.classList.add('loggedin');
       accountBtn.textContent = '◈ ACCOUNT ✓';
+      document.dispatchEvent(new CustomEvent('wc:registered'));
       appendMessage({ type:'system', text:`Registered as ${data.handle}. Paste now enabled.`, ts: Date.now() });
       return;
     }
@@ -1123,6 +1218,7 @@ function connect() {
       accountOverlay.classList.add('hidden');
       accountBtn.classList.add('loggedin');
       accountBtn.textContent = '◈ ACCOUNT ✓';
+      document.dispatchEvent(new CustomEvent('wc:loggedin'));
       if (myRole !== 'guest' && myRole !== 'user') {
         roleBadge.style.display = 'inline';
         roleText.textContent    = myRole.toUpperCase();
@@ -1132,11 +1228,11 @@ function connect() {
     }
 
     if (data.type === 'reg_err') {
-      document.getElementById('reg-err').textContent = data.text;
+      document.dispatchEvent(new CustomEvent('wc:reg_err', { detail: data.text }));
       return;
     }
     if (data.type === 'login_err') {
-      document.getElementById('login-err').textContent = data.text;
+      document.dispatchEvent(new CustomEvent('wc:login_err', { detail: data.text }));
       return;
     }
 
@@ -1154,6 +1250,7 @@ function connect() {
     }
 
     appendMessage(data);
+    if (data.type === 'msg') bumpUnread();
   });
 
   ws.addEventListener('close', () => {
@@ -1261,6 +1358,103 @@ if (savedHandle) {
   });
   setupFlag = myFlag;
 }
+
+// ══════════════════════════════════════════════════════════
+//  UNREAD NUDGE
+// ══════════════════════════════════════════════════════════
+const unreadNudge = document.getElementById('unread-nudge');
+const unreadCount = document.getElementById('unread-count');
+let unreadNum = 0;
+
+function isScrolledToBottom() {
+  return feed.scrollHeight - feed.scrollTop - feed.clientHeight < 60;
+}
+
+function bumpUnread() {
+  if (isScrolledToBottom()) return;
+  unreadNum++;
+  unreadCount.textContent = unreadNum;
+  unreadNudge.classList.add('visible');
+}
+
+function clearUnread() {
+  unreadNum = 0;
+  unreadNudge.classList.remove('visible');
+}
+
+unreadNudge.addEventListener('click', () => {
+  feed.scrollTop = feed.scrollHeight;
+  clearUnread();
+});
+
+feed.addEventListener('scroll', () => {
+  if (isScrolledToBottom()) clearUnread();
+});
+
+// Patch appendMessage to call bumpUnread for chat messages
+const _origAppend = appendMessage;
+window._appendWithUnread = function(data) {
+  _origAppend(data);
+  if (data.type === 'msg') bumpUnread();
+};
+
+// ══════════════════════════════════════════════════════════
+//  MOBILE EXPAND INPUT
+// ══════════════════════════════════════════════════════════
+const expandBtn      = document.getElementById('expand-btn');
+const expandOverlay  = document.getElementById('expand-overlay');
+const expandTextarea = document.getElementById('expand-textarea');
+const expandSendBtn  = document.getElementById('expand-send-btn');
+const expandCancelBtn= document.getElementById('expand-cancel-btn');
+const charCount      = document.getElementById('char-count');
+
+expandBtn.addEventListener('click', () => {
+  expandTextarea.value = msgInput.value;
+  charCount.textContent = `${expandTextarea.value.length} / 400`;
+  charCount.className = '';
+  expandOverlay.classList.add('open');
+  setTimeout(() => expandTextarea.focus(), 80);
+});
+
+expandTextarea.addEventListener('input', () => {
+  const len = expandTextarea.value.length;
+  charCount.textContent = `${len} / 400`;
+  charCount.className = len >= 400 ? 'at-limit' : len >= 360 ? 'near-limit' : '';
+});
+
+expandSendBtn.addEventListener('click', () => {
+  const text = expandTextarea.value.trim();
+  if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type:'msg', text }));
+  expandTextarea.value = '';
+  msgInput.value = '';
+  expandOverlay.classList.remove('open');
+});
+
+expandCancelBtn.addEventListener('click', () => {
+  expandOverlay.classList.remove('open');
+});
+
+// ══════════════════════════════════════════════════════════
+//  ACCOUNT ERROR HELPERS
+// ══════════════════════════════════════════════════════════
+function showAccErr(id, text, kind) {
+  // kind: 'error' | 'warning' | 'ok'
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = `acc-err-box show ${kind || 'error'}`;
+}
+
+// Patch ws message handler to use styled errors
+const _origRegErr   = data => { document.getElementById('reg-err').textContent   = data.text; };
+const _origLoginErr = data => { document.getElementById('login-err').textContent = data.text; };
+
+// Override: intercept reg_err and login_err for styled display
+// (These are handled inline in the ws message listener — we monkey-patch via event)
+document.addEventListener('wc:reg_err',   e => showAccErr('reg-err',   e.detail, 'error'));
+document.addEventListener('wc:login_err', e => showAccErr('login-err', e.detail, 'error'));
+document.addEventListener('wc:registered',e => showAccErr('reg-err',   '✓ Registered!', 'ok'));
+document.addEventListener('wc:loggedin',  e => showAccErr('login-err', '✓ Logged in!',  'ok'));
 </script>
 </body>
 </html>
