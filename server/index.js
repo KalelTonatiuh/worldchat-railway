@@ -29,6 +29,8 @@ const VOTE_THRESHOLD     = 3;
 const REVERIFY_EVERY_MS  = 60 * 60 * 1000;
 const REVERIFY_GRACE_MS  = 2  * 60 * 1000;
 
+const HISTORY_FILE = path.join(__dirname, '..', 'data', 'history.json');
+
 // ── In-memory state ───────────────────────────────────────────────────────────
 const history  = [];
 const accounts = new Map();   // lcHandle → { handle, pwHash, role }
@@ -36,6 +38,38 @@ const mods     = new Set();   // lcHandle strings
 const bans     = new Set();   // fingerprint strings
 const muteList = new Map();   // lcHandle → unmuteAt timestamp
 const voteKick = new Map();   // lcHandle → Set<voterLcHandle>
+
+// ── History persistence ───────────────────────────────────────────────────────
+function loadHistory() {
+  try {
+    fs.mkdirSync(path.dirname(HISTORY_FILE), { recursive: true });
+    const raw = fs.readFileSync(HISTORY_FILE, 'utf8');
+    const saved = JSON.parse(raw);
+    if (Array.isArray(saved)) {
+      saved.slice(-HISTORY_SIZE).forEach(m => history.push(m));
+      console.log(`Loaded ${history.length} messages from history file.`);
+    }
+  } catch (e) {
+    if (e.code !== 'ENOENT') console.warn('Could not load history:', e.message);
+  }
+}
+
+let _saveTimer = null;
+function saveHistory() {
+  // Debounce — write at most once per 2s
+  if (_saveTimer) return;
+  _saveTimer = setTimeout(() => {
+    _saveTimer = null;
+    try {
+      fs.mkdirSync(path.dirname(HISTORY_FILE), { recursive: true });
+      fs.writeFileSync(HISTORY_FILE, JSON.stringify(history), 'utf8');
+    } catch (e) {
+      console.warn('Could not save history:', e.message);
+    }
+  }, 2000);
+}
+
+loadHistory();
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
 function simpleHash(str) {
@@ -62,6 +96,7 @@ function sanitizeHandle(h) {
 function pushHistory(msg) {
   history.push(msg);
   if (history.length > HISTORY_SIZE) history.shift();
+  saveHistory();
 }
 
 function send(ws, obj) {
@@ -499,6 +534,11 @@ wss.on('connection', (ws, req) => {
     if (data.type === 'clearhistory') {
       if (!isOwner) { send(ws, { type:'error', text:'No permission.' }); return; }
       history.length = 0;
+      // Write empty array immediately — don't debounce
+      try {
+        fs.mkdirSync(path.dirname(HISTORY_FILE), { recursive: true });
+        fs.writeFileSync(HISTORY_FILE, '[]', 'utf8');
+      } catch(e) { console.warn('Could not clear history file:', e.message); }
       broadcast({ type:'clearhistory' });
       return;
     }
