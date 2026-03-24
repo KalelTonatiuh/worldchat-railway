@@ -1173,9 +1173,15 @@ function connect() {
 //  BOT CHECK SUBMIT
 // ══════════════════════════════════════════════════════════
 function submitBotcheck() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    botcheckErr.textContent = 'Not connected — please wait.';
+    return;
+  }
   const answer = parseInt(botcheckInput.value, 10);
   if (isNaN(answer)) { botcheckErr.textContent = 'Enter a number.'; return; }
+  botcheckBtn.disabled = true;
   ws.send(JSON.stringify({ type:'botcheck', answer }));
+  setTimeout(() => { botcheckBtn.disabled = false; }, 2000);
 }
 botcheckBtn.addEventListener('click', submitBotcheck);
 botcheckInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitBotcheck(); });
@@ -1184,9 +1190,15 @@ botcheckInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitBo
 //  RE-VERIFY SUBMIT
 // ══════════════════════════════════════════════════════════
 function submitReverify() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    reverifyErr.textContent = 'Not connected — please wait.';
+    return;
+  }
   const answer = parseInt(reverifyInput.value, 10);
   if (isNaN(answer)) { reverifyErr.textContent = 'Enter a number.'; return; }
+  reverifyBtn.disabled = true;
   ws.send(JSON.stringify({ type:'botcheck', answer }));
+  setTimeout(() => { reverifyBtn.disabled = false; }, 2000);
 }
 reverifyBtn.addEventListener('click', submitReverify);
 reverifyInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitReverify(); });
