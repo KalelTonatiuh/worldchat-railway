@@ -76,9 +76,15 @@ function broadcast(obj, exclude) {
 }
 
 function broadcastOnline() {
+  const users = [];
   let n = 0;
-  wss.clients.forEach(c => { if (c._verified) n++; });
-  const s = JSON.stringify({ type: 'online', count: n });
+  wss.clients.forEach(c => {
+    if (c._verified) {
+      n++;
+      users.push({ handle: sanitize(c._handle), flag: c._flag, role: getRole(c) });
+    }
+  });
+  const s = JSON.stringify({ type: 'online', count: n, users });
   wss.clients.forEach(c => { if (c.readyState === WebSocket.OPEN) c.send(s); });
 }
 

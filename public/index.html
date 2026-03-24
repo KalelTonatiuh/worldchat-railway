@@ -89,6 +89,32 @@ html, body {
 .led.off   { background: #1a1a1a; box-shadow: none; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
+/* ── CRT reconnect flicker ────────────────────────────────── */
+@keyframes crt-flicker {
+  0%   { opacity:1;    filter: brightness(1)   saturate(1); }
+  5%   { opacity:0.4;  filter: brightness(2.5) saturate(0) blur(1px); }
+  10%  { opacity:1;    filter: brightness(0.6) saturate(1); }
+  15%  { opacity:0.7;  filter: brightness(1.8) saturate(0); }
+  20%  { opacity:1;    filter: brightness(1)   saturate(1); }
+  55%  { opacity:1;    filter: brightness(1)   saturate(1); }
+  58%  { opacity:0.5;  filter: brightness(2)   saturate(0) blur(0.5px); }
+  61%  { opacity:1;    filter: brightness(0.8) saturate(1); }
+  100% { opacity:1;    filter: brightness(1)   saturate(1); }
+}
+@keyframes crt-scanroll {
+  from { background-position: 0 0; }
+  to   { background-position: 0 -120px; }
+}
+#screen-housing.reconnecting {
+  animation: crt-flicker 0.9s ease-in-out;
+}
+#screen-housing.reconnecting::before {
+  background:
+    repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 3px),
+    repeating-linear-gradient(0deg, transparent 0px, rgba(78,255,145,0.04) 60px, transparent 120px);
+  animation: crt-scanroll 0.18s linear infinite;
+}
+
 /* ── Screen housing ───────────────────────────────────────────────── */
 #screen-housing {
   flex: 1; background: #0a0a0a;
@@ -202,6 +228,85 @@ select.search-input option { background: #0a160a; }
 }
 .reaction-pip:hover { background: rgba(78,255,145,0.12); }
 .reaction-pip.own-react { border-color: var(--phosphor); color: var(--phosphor); }
+
+/* ── Typing avatar ────────────────────────────────────────── */
+#typing-avatars {
+  display: flex; gap: 3px; align-items: center; margin-right: 4px;
+}
+.typing-avatar-canvas {
+  width: 18px; height: 18px;
+  border: 1px solid var(--phosphor-lo);
+  image-rendering: pixelated;
+  flex-shrink: 0;
+  animation: typing-avatar-pulse 1.2s ease-in-out infinite;
+}
+@keyframes typing-avatar-pulse {
+  0%,100% { opacity: 1; border-color: var(--phosphor-lo); }
+  50%      { opacity: 0.6; border-color: var(--phosphor-dim); }
+}
+
+/* ── Timestamp tooltip ────────────────────────────────────── */
+.msg-line { cursor: default; }
+.ts {
+  color: var(--phosphor-lo);
+  position: relative;
+}
+.ts::after {
+  content: attr(data-full);
+  position: absolute; bottom: 100%; left: 0;
+  background: var(--wood-dark); border: 1px solid var(--brass-dark);
+  color: var(--brass); font-family: 'Courier Prime', monospace;
+  font-size: 11px; white-space: nowrap; padding: 3px 8px;
+  pointer-events: none; opacity: 0; transition: opacity 0.15s;
+  z-index: 50; letter-spacing: 0.05em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+.ts:hover::after { opacity: 1; }
+
+/* ── Who's online panel ───────────────────────────────────── */
+#online-count {
+  cursor: pointer; text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+#online-count:hover { color: var(--phosphor); }
+#online-panel {
+  position: fixed; z-index: 300;
+  background: linear-gradient(160deg, #2a1a08 0%, #1a0e04 100%);
+  border: 1px solid var(--brass-dark);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.8), inset 0 0 12px rgba(0,0,0,0.4);
+  min-width: 200px; max-width: 280px;
+  display: none; flex-direction: column;
+  max-height: 320px;
+}
+#online-panel.open { display: flex; }
+#online-panel-title {
+  font-family: 'Special Elite', serif; font-size: 11px; letter-spacing: 0.12em;
+  color: var(--brass-shine); padding: 7px 12px 6px;
+  border-bottom: 1px solid var(--brass-dark);
+  text-shadow: 0 0 8px rgba(200,148,26,0.4);
+  flex-shrink: 0;
+}
+#online-list {
+  overflow-y: auto; flex: 1;
+  padding: 4px 0;
+}
+#online-list::-webkit-scrollbar { width: 4px; }
+#online-list::-webkit-scrollbar-thumb { background: var(--brass-dark); }
+.online-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 12px; font-family: 'VT323', monospace;
+  font-size: 15px; color: var(--phosphor-dim);
+  transition: background 0.1s; cursor: pointer;
+}
+.online-row:hover { background: rgba(78,255,145,0.06); color: var(--phosphor); }
+.online-flag  { font-size: 14px; flex-shrink: 0; }
+.online-handle{ flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.online-role  {
+  font-size: 11px; padding: 1px 4px;
+  border: 1px solid; border-radius: 1px; flex-shrink: 0;
+}
+.online-role.mod   { color: var(--led-amber); border-color: rgba(255,170,0,0.4); }
+.online-role.owner { color: var(--red-err);   border-color: rgba(255,85,51,0.4); }
 
 /* ── Context menu ─────────────────────────────────────────────────── */
 #ctx-menu {
@@ -675,6 +780,7 @@ select.search-input option { background: #0a160a; }
     <button id="sound-toggle-btn" class="status-item" title="Toggle sounds" style="cursor:pointer;border-color:var(--phosphor-lo);background:transparent;font-family:'VT323',monospace;font-size:clamp(12px,2vw,16px);color:var(--phosphor-dim);letter-spacing:0.06em">🔇 SFX</button>
     <div class="status-item" id="typing-status" style="display:none">
       <span id="typing-led" class="led off" style="width:8px;height:8px;display:inline-block;vertical-align:middle;margin-right:5px"></span>
+      <span id="typing-avatars"></span>
       <span id="typing-label" style="color:var(--phosphor-dim);font-size:clamp(11px,1.8vw,14px)"></span>
     </div>
     <div class="status-leds">
@@ -897,6 +1003,12 @@ select.search-input option { background: #0a160a; }
       <button class="panel-btn secondary" id="profile-close-btn">CLOSE</button>
     </div>
   </div>
+</div>
+
+<!-- ═══════════════ WHO'S ONLINE PANEL ═══════════════ -->
+<div id="online-panel">
+  <div id="online-panel-title">◈ ONLINE NOW ◈</div>
+  <div id="online-list"></div>
 </div>
 
 <!-- ═══════════════ CONTEXT MENU ═══════════════ -->
@@ -1306,6 +1418,9 @@ function appendMessage(data) {
     const ts = document.createElement('span');
     ts.className = 'ts';
     ts.textContent = `[${formatTime(data.ts)}]`;
+    // Full timestamp tooltip
+    const fullDate = new Date(data.ts);
+    ts.dataset.full = fullDate.toUTCString().replace(' GMT', ' UTC');
 
     const handleSpan = document.createElement('span');
     handleSpan.className = 'handle';
@@ -1528,6 +1643,74 @@ function renderReactionPips(msgId, lineEl) {
 }
 
 // ══════════════════════════════════════════════════════════
+//  WHO'S ONLINE STATE
+// ══════════════════════════════════════════════════════════
+let onlineUsers = []; // [{ handle, flag, role }]
+
+const onlinePanel    = document.getElementById('online-panel');
+const onlineList     = document.getElementById('online-list');
+const onlineCountEl  = document.getElementById('online-count');
+let onlinePanelOpen  = false;
+
+function renderOnlinePanel() {
+  onlineList.innerHTML = '';
+  onlineUsers.forEach(u => {
+    const row = document.createElement('div');
+    row.className = 'online-row';
+
+    const flag = document.createElement('span');
+    flag.className   = 'online-flag';
+    flag.textContent = u.flag || '🌍';
+
+    const handle = document.createElement('span');
+    handle.className   = 'online-handle';
+    handle.textContent = u.handle;
+    if (u.handle === myHandle) handle.style.color = 'var(--amber)';
+
+    row.appendChild(flag);
+    row.appendChild(handle);
+
+    if (u.role === 'mod' || u.role === 'owner') {
+      const role = document.createElement('span');
+      role.className   = `online-role ${u.role}`;
+      role.textContent = u.role.toUpperCase();
+      row.appendChild(role);
+    }
+
+    // Click row → open profile
+    row.addEventListener('click', () => {
+      closeOnlinePanel();
+      openProfile(u.handle);
+    });
+
+    onlineList.appendChild(row);
+  });
+}
+
+function openOnlinePanel() {
+  const rect = onlineCountEl.closest('.status-item').getBoundingClientRect();
+  onlinePanel.style.left   = Math.min(rect.left, window.innerWidth - 290) + 'px';
+  onlinePanel.style.bottom = (window.innerHeight - rect.top + 6) + 'px';
+  onlinePanel.style.top    = 'auto';
+  renderOnlinePanel();
+  onlinePanel.classList.add('open');
+  onlinePanelOpen = true;
+}
+
+function closeOnlinePanel() {
+  onlinePanel.classList.remove('open');
+  onlinePanelOpen = false;
+}
+
+onlineCountEl.addEventListener('click', e => {
+  e.stopPropagation();
+  onlinePanelOpen ? closeOnlinePanel() : openOnlinePanel();
+});
+document.addEventListener('click', e => {
+  if (onlinePanelOpen && !onlinePanel.contains(e.target)) closeOnlinePanel();
+});
+
+// ══════════════════════════════════════════════════════════
 //  WEBSOCKET
 // ══════════════════════════════════════════════════════════
 const WS_URL = location.hostname === 'localhost'
@@ -1567,6 +1750,10 @@ function connect() {
 
     if (data.type === 'online') {
       onlineEl.textContent = data.count;
+      if (data.users) {
+        onlineUsers = data.users;
+        if (onlinePanelOpen) renderOnlinePanel();
+      }
       return;
     }
 
@@ -1703,6 +1890,10 @@ function connect() {
 
   ws.addEventListener('close', () => {
     ledConn.className = 'led red';
+    // CRT flicker effect
+    const housing = document.getElementById('screen-housing');
+    housing.classList.add('reconnecting');
+    setTimeout(() => housing.classList.remove('reconnecting'), 950);
     appendMessage({ type:'system', text:'Connection lost — reconnecting…', ts: Date.now() });
     setTimeout(connect, reconnectDelay);
     reconnectDelay = Math.min(reconnectDelay * 1.5, 15000);
@@ -1912,17 +2103,43 @@ const typingStatus = document.getElementById('typing-status');
 const typingLed    = document.getElementById('typing-led');
 const typingLabel  = document.getElementById('typing-label');
 
+const typingAvatarsEl = document.getElementById('typing-avatars');
+
 function updateTypingBar() {
   const names = Object.keys(typingTimers);
   if (!names.length) {
     typingStatus.style.display = 'none';
     typingLed.className = 'led off';
     typingLed.style.cssText = 'width:8px;height:8px;display:inline-block;vertical-align:middle;margin-right:5px';
+    typingAvatarsEl.innerHTML = '';
     return;
   }
   typingStatus.style.display = '';
   typingLed.className = 'led amber';
   typingLed.style.cssText = 'width:8px;height:8px;display:inline-block;vertical-align:middle;margin-right:5px';
+
+  // Render mini avatar canvases
+  typingAvatarsEl.innerHTML = '';
+  names.forEach(handle => {
+    const cached = profileCache[handle];
+    const avatarData = cached && cached.avatar ? cached.avatar : null;
+    if (avatarData) {
+      const c = document.createElement('canvas');
+      c.className = 'typing-avatar-canvas';
+      c.width  = 24;
+      c.height = 24;
+      c.title  = handle;
+      typingAvatarsEl.appendChild(c);
+      const img = new Image();
+      img.onload = () => {
+        const ctx = c.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, 0, 0, 24, 24);
+      };
+      img.src = avatarData;
+    }
+  });
+
   if (names.length === 1) typingLabel.textContent = `${names[0]} typing…`;
   else if (names.length === 2) typingLabel.textContent = `${names[0]} + ${names[1]} typing…`;
   else typingLabel.textContent = `${names.length} typing…`;
